@@ -37,9 +37,9 @@ Copy `.env.example` to `.env` and fill in:
 | `LLM_API_KEY` | Your LLM provider API key (e.g. OpenAI) |
 | `DELEGATOR_PRIVATE_KEY` | EOA private key for delegation |
 | `DELEGATOR_EOA_ADDRESS` | Delegator EOA address |
-| `DELEGATEE_ADDRESS` | Delegatee address |
-| `DELEGATEE_SA_ADDRESS` | Delegatee smart account address |
-| `DELEGATEE_PRIVATE_KEY` | Delegatee private key |
+| `DELEGATE_EOA_ADDRESS` | Delegatee EOA address |
+| `DELEGATE_SA_ADDRESS` | Delegatee smart account address |
+| `DELEGATE_PRIVATE_KEY` | Delegatee private key |
 | `BUNDLER_BASE_SEPOLIA_URL` | Bundler URL for Base Sepolia |
 | `BUNDLER_SEPOLIA_URL` | Bundler URL for Sepolia |
 | `TARGET_ADDRESS` | Target address for transfers |

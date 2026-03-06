@@ -1,23 +1,12 @@
 {
-  "name": "underflow-examples",
+  "name": "trustless-agent-workshop",
   "version": "1.0.0",
-  "description": "Examples for EIP-7702, delegation, and related patterns",
+  "description": "Workshop for building AI agents with Trustless Agent Stack",
   "type": "module",
   "packageManager": "pnpm@10.6.5",
   "scripts": {
-    "lang-graph-agent": "tsx src/lang-graph-simple-agent.ts",
-    "eip-7702-gator": "tsx src/eip-7702-with-gator.ts",
-    "erc-7710-gator-transfer": "tsx src/erc-7710-with-nativeTokenTransfer.ts",
-    "erc-7710-gator-token-period": "tsx src/erc-7710-with-nativeTokenPeriod.ts",
-    "erc-7710-gator-specific-call": "tsx src/erc-7710-with-specific-call.ts",
-    "workshop": "tsx src/workshop/index.ts",
-    "workshop:1": "tsx src/workshop/index.ts 1",
-    "workshop:2": "tsx src/workshop/index.ts 2",
-    "workshop:3": "tsx src/workshop/index.ts 3",
-    "workshop:4": "tsx src/workshop/index.ts 4",
-    "eip-7702-erc-7710-gator": "tsx src/eip-7702-erc-7710-with-gator.ts"
+    "workshop": "tsx src/workshop/index.ts"
   },
-
   "keywords": [
     "eip-7702",
     "delegation",
@@ -25,11 +14,12 @@
     "ethereum"
   ],
   "dependencies": {
-    "@langchain/openai": "^0.3.0",
     "@langchain/core": "^0.3.0",
     "@langchain/langgraph": "^0.2.0",
+    "@langchain/openai": "^0.3.0",
     "@metamask/delegation-toolkit": "^0.13.0",
     "@metamask/smart-accounts-kit": "0.4.0-beta.0",
+    "agent0-sdk": "^1.5.3",
     "dotenv": "^17.2.3",
     "express": "^4.21.0",
     "viem": "^2.38.6",

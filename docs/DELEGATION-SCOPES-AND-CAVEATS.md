@@ -202,7 +202,7 @@ const caveats = caveatBuilder
   .build();
 
 const delegation = {
-  delegate: "DELEGATE_ADDRESS",
+  delegate: "DELEGATE_SA_ADDRESS",
   delegator: delegatorSmartAccount.address,
   authority: ROOT_AUTHORITY,
   caveats,

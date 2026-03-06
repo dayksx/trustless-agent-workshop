@@ -83,7 +83,7 @@ UserOperation reverted during simulation with reason: 0xb5863604
 
 | Cause | Description | Solution |
 |-------|-------------|----------|
-| **InvalidDelegate** | Le `delegate` dans la délégation ne correspond pas à `msg.sender` (le redeemer). | `DELEGATEE_ADDRESS` doit être l'adresse du DeleGator (smart account), pas l'EOA. Ou définir `DELEGATEE_PRIVATE_KEY` pour que le delegator utilise automatiquement la bonne adresse. |
+| **InvalidDelegate** | Le `delegate` dans la délégation ne correspond pas à `msg.sender` (le redeemer). | `DELEGATE_SA_ADDRESS` doit être l'adresse du DeleGator (smart account), pas l'EOA. Ou définir `DELEGATE_PRIVATE_KEY` pour que le delegator utilise automatiquement la bonne adresse. |
 | **CannotUseADisabledDelegation** | La délégation a été désactivée via `disableDelegation`. | Créer une nouvelle délégation ou appeler `enableDelegation`. |
 | **Solde insuffisant** | Le delegator n'a pas assez d'ETH pour le transfert. | Financer le delegator sur Base Sepolia. |
 | **Caveat enforcer** | Un caveat (ex. `nativeTokenTransferAmount`) a échoué. | Vérifier les termes et le montant. |
@@ -96,8 +96,8 @@ UserOperation reverted during simulation with reason: 0xb5863604
 
 **Solutions :**
 
-- Définir `DELEGATEE_PRIVATE_KEY` dans `.env` lors de la création des délégations : le script dérive automatiquement l'adresse DeleGator correcte.
-- Si vous utilisez uniquement `DELEGATEE_ADDRESS`, celle-ci doit être l'adresse du DeleGator (smart account), pas l'adresse EOA.
+- Définir `DELEGATE_PRIVATE_KEY` dans `.env` lors de la création des délégations : le script dérive automatiquement l'adresse DeleGator correcte.
+- Si vous utilisez uniquement `DELEGATE_SA_ADDRESS`, celle-ci doit être l'adresse du DeleGator (smart account), pas l'adresse EOA.
 - Vérifier le solde du delegator sur Base Sepolia.
 - Obtenir des ETH de test : [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet).
 
@@ -107,7 +107,7 @@ UserOperation reverted during simulation with reason: 0xb5863604
 
 | Erreur | Cause | Solution |
 |--------|-------|----------|
-| `Missing DELEGATEE_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL` | Variables d'environnement manquantes | Définir `.env` avec les clés requises. |
+| `Missing DELEGATE_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL` | Variables d'environnement manquantes | Définir `.env` avec les clés requises. |
 | `Delegation missing signedDelegation` | Objet de délégation incomplet | Inclure `signedDelegation` dans le payload. |
 | `Invalid chain` | Chaîne non supportée par le bundler | Utiliser Base Sepolia ou chaîne configurée. |
 

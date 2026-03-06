@@ -42,8 +42,8 @@ function getDelegatorAccount() {
 }
 
 function getDelegateAddress(): `0x${string}` {
-  const delegateAddress = process.env.DELEGATEE_SA_ADDRESS as `0x${string}` | undefined;
-  if (!delegateAddress) throw new Error("Missing DELEGATEE_SA_ADDRESS in environment");
+  const delegateAddress = process.env.DELEGATE_SA_ADDRESS as `0x${string}` | undefined;
+  if (!delegateAddress) throw new Error("Missing DELEGATE_SA_ADDRESS in environment");
   return delegateAddress;
 }
 
