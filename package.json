@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.6.5",
   "scripts": {
     "workshop": "tsx src/workshop/index.ts",
-    "create-smart-accounts": "tsx src/workshop-empty/0-create-smart-accounts.ts"
+    "create-smart-accounts": "tsx src/workshop/0-create-smart-accounts.ts"
   },
   "keywords": [
     "eip-7702",

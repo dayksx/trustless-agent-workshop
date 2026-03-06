@@ -20,13 +20,19 @@ cp .env.example .env
 ### Workshop (LangGraph Agent)
 
 ```bash
-pnpm run workshop:1   # Test agent (runtime + tools)
-pnpm run workshop:2   # Start HTTP server (agent card, chat)
-pnpm run workshop:3   # Test agent with full tools
-pnpm run workshop:4   # On-chain agent registration (ERC-8004)
+pnpm run workshop test     # Test agent (runtime + tools)
+pnpm run workshop launch   # Start HTTP server (agent card, chat)
+pnpm run workshop register # On-chain agent registration (ERC-8004)
+pnpm run workshop create   # Create smart accounts
 ```
 
 The agent runs at `http://localhost:3000`.
+
+### Create Smart Accounts
+
+```bash
+pnpm run create-smart-accounts
+```
 
 ## Environment Variables
 
@@ -35,8 +41,9 @@ Copy `.env.example` to `.env` and fill in:
 | Variable | Description |
 |----------|-------------|
 | `LLM_API_KEY` | Your LLM provider API key (e.g. OpenAI) |
-| `DELEGATOR_PRIVATE_KEY` | EOA private key for delegation |
+| `DELEGATOR_PRIVATE_KEY` | Delegator EOA private key |
 | `DELEGATOR_EOA_ADDRESS` | Delegator EOA address |
+| `DELEGATOR_SA_ADDRESS` | Delegator smart account address |
 | `DELEGATE_EOA_ADDRESS` | Delegatee EOA address |
 | `DELEGATE_SA_ADDRESS` | Delegatee smart account address |
 | `DELEGATE_PRIVATE_KEY` | Delegatee private key |
@@ -48,30 +55,26 @@ Copy `.env.example` to `.env` and fill in:
 
 | Command | Description |
 |---------|-------------|
-| `pnpm run workshop` | Run workshop (default: test) |
-| `pnpm run workshop:1` | Test agent runtime + tools |
-| `pnpm run workshop:2` | Start HTTP server |
-| `pnpm run workshop:3` | Test agent with full tools |
-| `pnpm run workshop:4` | Register agent on-chain |
-| `pnpm run eip-7702-gator` | EIP-7702 with Gator |
-| `pnpm run eip-7702-erc-7710-gator` | EIP-7702 + ERC-7710 with Gator |
-| `pnpm run erc-7710-gator-transfer` | ERC-7710 native token transfer |
-| `pnpm run erc-7710-gator-token-period` | ERC-7710 period-based transfer |
-| `pnpm run erc-7710-gator-specific-call` | ERC-7710 specific function call |
+| `pnpm run workshop [step]` | Run workshop (step: `test`, `launch`, `register`, `create`) |
+| `pnpm run create-smart-accounts` | Create smart accounts |
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── workshop/           # LangGraph agent workshop
-│   │   ├── 1-agent-runtime.ts   # Agent, model, tools
-│   │   ├── 2-agent-tools.ts     # Delegation tools
+│   ├── workshop/              # LangGraph agent workshop (complete)
+│   │   ├── 0-create-smart-accounts.ts
+│   │   ├── 1-agent-runtime.ts  # Agent, model, tools
+│   │   ├── 2-agent-tools.ts   # Delegation tools
 │   │   ├── 3-agent-services.ts # HTTP server, agent card, x402
-│   │   └── 4-agent-registration.ts  # On-chain registration
-│   ├── eip-7702-with-gator.ts
-│   ├── eip-7702-erc-7710-with-gator.ts
-│   └── erc-7710-with-*.ts   # Various ERC-7710 delegation scopes
-├── abis/
+│   │   ├── 4-agent-registration.ts # On-chain registration
+│   │   └── external-agent.ts
+│   └── workshop-empty/        # Starter template for workshop
+│       ├── 1-agent-runtime.ts
+│       ├── 2-agent-tools.ts
+│       ├── 3-agent-services.ts
+│       ├── 4-agent-registration.ts
+│       └── external-agent.ts
 ├── docs/
 └── .env.example
 ```
