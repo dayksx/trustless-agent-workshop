@@ -42,6 +42,7 @@ import {
 // ÉTAPE 4: Registration (4-agent-registration.ts)
 // ============================================================================
 import { registerAgent } from "./4-agent-registration";
+import { createSmartAccounts } from "../workshop/0-create-smart-accounts";
 
 // ============================================================================
 // RUN
@@ -66,6 +67,9 @@ async function main() {
       break;
     case "register":
       await registerAgent();
+      break;
+    case "create":
+      await createSmartAccounts();
       break;
     default:
       test();
