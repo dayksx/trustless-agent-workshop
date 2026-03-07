@@ -65,7 +65,6 @@ export const delegateTransferTool = tool(
     console.log("Tool invoked: delegate_transfer");
     try {
       const signedDelegation = await createTransferDelegation(recipient, amount, when);
-
       const data = await callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, recipient, amount, when });
 
       if (data.error) {
@@ -106,7 +105,7 @@ export const delegateSwapTool = tool(
     try {
       const signedDelegation = await createSwapDelegation(tokenIn, tokenOut, amountIn, when);
 
-      const data = await callExternalAgent({ agentId: 1, skill: "swap", signedDelegation, tokenIn, tokenOut, amountIn, when });
+      const data = await callExternalAgent({ agentId: 2, skill: "swap", signedDelegation, tokenIn, tokenOut, amountIn, when });
 
       if (data.error) {
         return JSON.stringify({ error: data.error.message });
@@ -301,9 +300,6 @@ export async function createSwapDelegation(tokenIn: string, tokenOut: string, am
       ],
     },
     caveats: [
-      { type: "valueLte", maxValue: parseEther(amountIn) },
-      { type: "erc20TransferAmount", tokenAddress: WETH, maxAmount: parseUnits("0.0001", 18) },
-      { type: "erc20TransferAmount", tokenAddress: USDC, maxAmount: parseUnits("50", 6) },
     ],
     salt,
   });

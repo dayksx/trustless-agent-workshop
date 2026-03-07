@@ -112,16 +112,7 @@ async function runFree(baseUrl: string, message: string): Promise<void> {
 async function runPaid(baseUrl: string, message: string): Promise<void> {
   const privateKey = process.env.USER_PRIVATE_KEY as `0x${string}` | undefined;
   if (!privateKey) {
-    console.error(`
-❌ USER_PRIVATE_KEY is required for paid-service (x402 payment).
-
-Setup:
-  1. Add EVM_PRIVATE_KEY to .env (EOA private key with USDC on Base Sepolia)
-  2. Get test USDC: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
-  3. Run: pnpm run call-services paid --message "Swap 0.001 ETH to USDC"
-
-For free access, use: pnpm run call-services free --message "..."
-`);
+    console.error(`❌ USER_PRIVATE_KEY is required for paid-service (x402 payment).`);
     throw new Error("Missing EVM_PRIVATE_KEY");
   }
 

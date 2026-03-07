@@ -11,13 +11,41 @@
  */
 
 import "dotenv/config";
-import { createPublicClient, formatEther, http, parseEther } from "viem";
+import { createPublicClient, encodeFunctionData, formatEther, http, parseEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { createBundlerClient } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
 import { createExecution, ExecutionMode } from "@metamask/delegation-toolkit";
 import { DelegationManager } from "@metamask/delegation-toolkit/contracts";
 import { Implementation, toMetaMaskSmartAccount } from "@metamask/smart-accounts-kit";
+
+const WETH_BASE_SEPOLIA = "0x4200000000000000000000000000000000000006" as const;
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const;
+
+const SWAP_ROUTER_02_ABI = [
+  {
+    name: "exactInputSingle",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        components: [
+          { name: "tokenIn", type: "address" },
+          { name: "tokenOut", type: "address" },
+          { name: "fee", type: "uint24" },
+          { name: "recipient", type: "address" },
+          { name: "deadline", type: "uint256" },
+          { name: "amountIn", type: "uint256" },
+          { name: "amountOutMinimum", type: "uint256" },
+          { name: "sqrtPriceLimitX96", type: "uint160" },
+        ],
+      },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
 
 export interface CallExternalAgentParams {
   agentId: number;
@@ -34,7 +62,7 @@ export interface CallExternalAgentParams {
 }
 
 /**
- * Redeems a delegation on-chain without calling an external agent.
+ * Redeems a delegation on-chain without calling an external agent (MOCKED).
  * Routes to different redeeming logic based on skill.
  */
 export async function callExternalAgent(params: CallExternalAgentParams): Promise<any> {
@@ -51,17 +79,22 @@ export async function callExternalAgent(params: CallExternalAgentParams): Promis
 }
 
 /**
- * Placeholder: Redeem transfer delegation on-chain.
+ * Shared logic: redeem a delegation on-chain with the given execution.
  */
-async function redeemDelegationTransfer(params: CallExternalAgentParams): Promise<any> {
-  const { agentId, signedDelegation, recipient, amount } = params;
+async function redeemDelegationOnChain(opts: {
+  agentId: number;
+  signedDelegation: unknown;
+  execution: ReturnType<typeof createExecution>;
+  successMessage: string;
+  amountForError?: string;
+}): Promise<any> {
+  const { agentId, signedDelegation, execution, successMessage, amountForError } = opts;
   const env = process.env;
   const delegatePrivateKey = env.DELEGATE_PRIVATE_KEY as `0x${string}` | undefined;
   const bundlerBaseSepoliaUrl = env.BUNDLER_BASE_SEPOLIA_URL as string | undefined;
 
   if (!delegatePrivateKey || !bundlerBaseSepoliaUrl) throw new Error("Missing DELEGATE_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL in environment");
   if (!signedDelegation) throw new Error("Delegation missing signedDelegation");
-  if (!recipient || !amount) throw new Error("Missing recipient or amount");
 
   try {
     const publicClient = createPublicClient({
@@ -85,12 +118,6 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
       signer: { account: delegateAccount },
     });
 
-    const execution = createExecution({
-      target: recipient as `0x${string}`,
-      value: parseEther(amount),
-      callData: "0x",
-    });
-
     const { maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas();
 
     const delegations = [signedDelegation as any];
@@ -106,10 +133,10 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
     const userOperationHash = await bundlerClient.sendUserOperation({
       account: delegateSmartAccount,
       calls: [
-        { 
-          to: delegateSmartAccount.address, 
-          data: redeemDelegationCalldata 
-        }
+        {
+          to: delegateSmartAccount.address,
+          data: redeemDelegationCalldata,
+        },
       ],
       maxFeePerGas,
       maxPriorityFeePerGas,
@@ -120,7 +147,7 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
     });
 
     console.log(
-      " Transfer successfully redeemed on-chain \n",
+      ` ${successMessage} \n`,
       JSON.stringify(receipt, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2)
     );
 
@@ -128,7 +155,7 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
       result: {
         taskId: 1,
         hash: userOperationHash,
-        message: "Transfer successfully redeemed on-chain",
+        message: successMessage,
       },
     };
   } catch (err) {
@@ -149,7 +176,7 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
     // Decode common simulation revert: 0xb5863604 (may be balance, caveat, or other delegation issue)
     else if (message.includes("0xb5863604")) {
       const delegatorAddr = (signedDelegation as { delegator?: string })?.delegator;
-      const amountNeededStr = amount ?? env.REDEEM_VALUE_ETH ?? "0";
+      const amountNeededStr = amountForError ?? env.REDEEM_VALUE_ETH ?? "0";
       const amountNeededWei = parseEther(amountNeededStr);
 
       if (delegatorAddr) {
@@ -203,18 +230,88 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
 }
 
 /**
- * Placeholder: Redeem swap delegation on-chain.
- * TODO: Implement swap delegation redeeming (e.g. DEX interaction).
+ * Redeem transfer delegation on-chain.
+ */
+async function redeemDelegationTransfer(params: CallExternalAgentParams): Promise<any> {
+  const { agentId, signedDelegation, recipient, amount } = params;
+  if (!recipient || !amount) throw new Error("Missing recipient or amount");
+
+  const execution = createExecution({
+    target: recipient as `0x${string}`,
+    value: parseEther(amount),
+    callData: "0x",
+  });
+
+  return redeemDelegationOnChain({
+    agentId,
+    signedDelegation,
+    execution,
+    successMessage: "Transfer successfully redeemed on-chain",
+    amountForError: amount,
+  });
+}
+
+/**
+ * Redeem swap delegation on-chain.
+ * ETH→USDC: Uses WETH as tokenIn and sends native ETH as value (router wraps internally).
+ * WETH→USDC: Uses WETH as tokenIn, value=0 (delegator must hold WETH).
  */
 async function redeemDelegationSwap(params: CallExternalAgentParams): Promise<any> {
   const { agentId, signedDelegation, tokenIn, tokenOut, amountIn } = params;
-  // Placeholder: would redeem swap delegation via DEX router, etc.
-  console.log(`[mock agentId=${agentId}] redeemDelegationSwap: ${tokenIn} -> ${tokenOut}, amountIn=${amountIn}`);
-  return {
-    result: {
-      taskId: 1,
-      hash: "0x" + "0".repeat(64),
-      message: "Swap delegation redeem (placeholder)",
-    },
-  };
+  if (!tokenIn || !tokenOut || !amountIn) throw new Error("Missing tokenIn, tokenOut or amountIn");
+
+  const delegatorAddr =
+    (signedDelegation as { delegator?: string })?.delegator ??
+    (signedDelegation as { from?: string })?.from;
+  if (!delegatorAddr) throw new Error("Delegation missing delegator/from address");
+
+  const uniswapSwapRouter02 =
+    (process.env.UNISWAP_SWAP_ROUTER_02 as `0x${string}`) ??
+    ("0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4" as `0x${string}`); // Base Sepolia
+
+  // ETH or WETH → USDC: Uniswap V3 pools trade ERC20s only, so we use WETH.
+  // Native ETH: send value, router wraps and swaps. WETH: value=0, delegator must hold WETH.
+  const isNativeEth =
+    tokenIn.toLowerCase() === "eth" ||
+    tokenIn.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+
+  const tokenInAddr = isNativeEth ? (WETH_BASE_SEPOLIA as `0x${string}`) : (tokenIn as `0x${string}`);
+  const tokenOutAddr =
+    tokenOut.toLowerCase() === "usdc"
+      ? (USDC_BASE_SEPOLIA as `0x${string}`)
+      : (tokenOut as `0x${string}`);
+
+  const amountInWei = parseEther(amountIn);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 min
+
+  const callData = encodeFunctionData({
+    abi: SWAP_ROUTER_02_ABI,
+    functionName: "exactInputSingle",
+    args: [
+      {
+        tokenIn: tokenInAddr,
+        tokenOut: tokenOutAddr,
+        fee: 3000, // 0.3% pool (common for WETH/USDC)
+        recipient: delegatorAddr as `0x${string}`,
+        deadline,
+        amountIn: amountInWei,
+        amountOutMinimum: 0n, // TODO: add slippage protection via QuoterV2
+        sqrtPriceLimitX96: 0n,
+      },
+    ],
+  });
+
+  const execution = createExecution({
+    target: uniswapSwapRouter02,
+    value: isNativeEth ? amountInWei : 0n,
+    callData,
+  });
+
+  return redeemDelegationOnChain({
+    agentId,
+    signedDelegation,
+    execution,
+    successMessage: "Swap successfully redeemed on-chain",
+    amountForError: amountIn,
+  });
 }

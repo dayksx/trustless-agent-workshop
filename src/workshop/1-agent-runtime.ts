@@ -31,7 +31,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, MessagesAnnotation, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
-import { delegateLendingTool, delegateStakingTool, delegateTransferTool, delegateYieldFarmingTool } from "./2-agent-tools";
+import { delegateLendingTool, delegateStakingTool, delegateSwapTool, delegateTransferTool, delegateYieldFarmingTool } from "./2-agent-tools";
 
 // ============================================================================
 // STATIC PROMPT
@@ -49,7 +49,7 @@ const model = new ChatOpenAI({
   apiKey: process.env.LLM_API_KEY,
 });
 
-const tools = [delegateTransferTool, delegateStakingTool, delegateYieldFarmingTool, delegateLendingTool];
+const tools = [delegateTransferTool, delegateSwapTool, delegateStakingTool, delegateYieldFarmingTool, delegateLendingTool];
 const modelWithTools = model.bindTools(tools);
 
 // ============================================================================
