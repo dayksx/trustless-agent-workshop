@@ -62,6 +62,7 @@ function getDelegateAddress(): `0x${string}` {
 
 export const delegateTransferTool = tool(
   async ({ recipient, amount, when }) => {
+    console.log("Tool invoked: delegate_transfer");
     try {
       const signedDelegation = await createTransferDelegation(recipient, amount, when);
 
@@ -73,7 +74,7 @@ export const delegateTransferTool = tool(
 
       return JSON.stringify({
         taskId: data.result?.taskId,
-        message: `Delegation successfully redeemed on-chain. Transaction hash: ${data.result?.hash}`,
+        message: `Transfer successfully executed on-chain on behalf of the delegator. Transaction hash: ${data.result?.hash}`,
       });
 
     } catch (error: any) {
@@ -101,6 +102,7 @@ export const delegateTransferTool = tool(
 
 export const delegateSwapTool = tool(
   async ({ tokenIn, tokenOut, amountIn, when }) => {
+    console.log("Tool invoked: delegate_swap");
     try {
       const signedDelegation = await createSwapDelegation(tokenIn, tokenOut, amountIn, when);
 
@@ -111,7 +113,7 @@ export const delegateSwapTool = tool(
       }
     return JSON.stringify({
       taskId: data.result?.taskId,
-      message: `Delegation successfully redeemed on-chain. Transaction hash: ${data.result?.hash}`,
+      message: `Swap successfully executed on-chain on behalf of the delegator. Transaction hash: ${data.result?.hash}`,
     });
     
     } catch (error: any) {
@@ -129,6 +131,96 @@ export const delegateSwapTool = tool(
         tokenIn: z.string().describe("Token in (e.g., 'ETH')"),
         tokenOut: z.string().describe("Token out (e.g., 'USDC')"),
         amountIn: z.string().describe("Amount in (e.g., '0.001')"),
+        when: z
+          .string()
+          .optional()
+          .nullable()
+          .describe("When to execute: 'now' or ISO timestamp"),
+      }),
+  }
+);
+
+export const delegateStakingTool = tool(
+  async ({ amount, when }) => {
+    console.log("Tool invoked: delegate_staking");
+    try {
+      // workshop placeholder: implement tool
+      return JSON.stringify({
+        taskId: 0,
+        message: `Staking / Unstaking successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
+      });
+    } catch (error: any) {
+      return JSON.stringify({ 
+        error: error.message 
+      });
+    }
+  },
+  {
+    name: "delegate_staking",
+    description: "Delegates a staking operation to an external A2A agent. Use when the user wants to stake ETH (or native token). Requires amount and when. Optional: when (timestamp or 'now').",
+    schema:
+      z.object({
+        amount: z.string().describe("Amount to stake in ETH (e.g., '0.001')"),
+        when: z
+          .string()
+          .optional()
+          .nullable()
+          .describe("When to execute: 'now' or ISO timestamp"),
+      }),
+  }
+);
+
+export const delegateYieldFarmingTool = tool(
+  async ({ amount, when }) => {
+    console.log("Tool invoked: delegate_yield_farming");
+    try {
+      // workshop placeholder: implement tool
+      return JSON.stringify({
+        taskId: 0,
+        message: `Yield farming successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
+      });
+    } catch (error: any) {
+      return JSON.stringify({ 
+        error: error.message 
+      });
+    }
+  },
+  {
+    name: "delegate_yield_farming",
+    description: "Delegates a yield farming operation to an external A2A agent. Use when the user wants to farm yield. Requires amount and when. Optional: when (timestamp or 'now').",
+    schema:
+      z.object({
+        amount: z.string().describe("Amount to farm in ETH (e.g., '0.001')"),
+        when: z
+          .string()
+          .optional()
+          .nullable()
+          .describe("When to execute: 'now' or ISO timestamp"),
+      }),
+  }
+);
+
+export const delegateLendingTool = tool(
+  async ({ amount, when }) => {
+    console.log("Tool invoked: delegate_lending");
+    try {
+      // workshop placeholder: implement tool
+      return JSON.stringify({
+        taskId: 0,
+        message: `Lending / Borrowing successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
+      });
+    } catch (error: any) {
+      return JSON.stringify({ 
+        error: error.message 
+      });
+    }
+  },
+  {
+    name: "delegate_lending",
+    description: "Delegates a lending operation to an external A2A agent. Use when the user wants to lend ETH (or native token). Requires amount and when. Optional: when (timestamp or 'now').",
+    schema:
+      z.object({
+        amount: z.string().describe("Amount to lend in ETH (e.g., '0.001')"),
         when: z
           .string()
           .optional()

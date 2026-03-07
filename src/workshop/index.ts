@@ -56,7 +56,7 @@ async function test() {
     {
       messages: [
         new HumanMessage(
-          "Send 0.000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
+          "Lend 0.000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
         ),
       ],
     },
