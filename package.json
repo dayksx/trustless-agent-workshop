@@ -6,7 +6,8 @@
   "packageManager": "pnpm@10.6.5",
   "scripts": {
     "workshop": "tsx src/workshop/index.ts",
-    "create-smart-accounts": "tsx src/workshop/0-create-smart-accounts.ts"
+    "create-smart-accounts": "tsx src/workshop/0-create-smart-accounts.ts",
+    "call-services": "tsx src/workshop/4-call-agent-services.ts"
   },
   "keywords": [
     "eip-7702",
@@ -21,9 +22,11 @@
     "@metamask/delegation-toolkit": "^0.13.0",
     "@metamask/smart-accounts-kit": "0.4.0-beta.0",
     "agent0-sdk": "^1.5.3",
+    "axios": "^1.7.9",
     "dotenv": "^17.2.3",
     "express": "^4.21.0",
     "viem": "^2.38.6",
+    "x402-axios": "^1.1.0",
     "x402-express": "^0.7.1",
     "zod": "^3.23.8"
   },

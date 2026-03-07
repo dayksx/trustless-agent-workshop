@@ -94,6 +94,14 @@ UserOperation reverted during simulation with reason: 0xb5863604
 |-------|-------------|----------|
 | **allowance-exceeded** | Le montant demandé dépasse l'allowance restante de la délégation. L'enforcer suit `spentMap[sender][delegationHash]` : les délégations avec le même hash partagent le même compteur. | Utiliser un **salt unique** par délégation (`createDelegation(..., { salt: '0x' + randomBytes(32).toString('hex') })`). Si déjà redeemée, créer une nouvelle délégation avec un nouveau salt. Vérifier que le montant du tool correspond au maxAmount de la caveat. |
 
+**revert reason: 0x (empty) :**
+
+| Cause | Solution |
+|-------|----------|
+| **Paymaster rejection** | Set `USE_PAYMASTER=false` or omit it. Fund the delegate smart account with ETH for gas. |
+| **Delegator balance** | The delegator (DELEGATOR_SA_ADDRESS) must have enough ETH for the transfer. |
+| **Delegate ≠ redeemer** | DELEGATE_SA_ADDRESS must match the smart account from DELEGATE_PRIVATE_KEY. |
+
 **Solutions :**
 
 - Définir `DELEGATE_PRIVATE_KEY` dans `.env` lors de la création des délégations : le script dérive automatiquement l'adresse DeleGator correcte.

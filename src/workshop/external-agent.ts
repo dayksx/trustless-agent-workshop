@@ -72,7 +72,7 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
     const bundlerClient = createBundlerClient({
       client: publicClient,
       transport: http(bundlerBaseSepoliaUrl),
-      paymaster: true,
+      paymaster: process.env.USE_PAYMASTER === "true",
     });
 
     const delegateAccount = privateKeyToAccount(delegatePrivateKey as `0x${string}`);

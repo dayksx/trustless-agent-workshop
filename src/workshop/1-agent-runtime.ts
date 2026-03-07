@@ -30,7 +30,7 @@ import "dotenv/config";
 import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, MessagesAnnotation, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { SystemMessage, BaseMessage } from "@langchain/core/messages";
+import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
 import { delegateTransferTool } from "./2-agent-tools";
 
 // ============================================================================
@@ -69,9 +69,6 @@ const agent = new StateGraph(MessagesAnnotation)
         new SystemMessage(STATIC_SYSTEM_PROMPT),
         ...state.messages,
       ]);
-
-      console.log("=== Response state === \n", JSON.stringify(response, null, 2));
-      console.log("=== === === === === === \n");
       
       return { messages: [response] };
     }
@@ -82,11 +79,7 @@ const agent = new StateGraph(MessagesAnnotation)
     "llm",
     (state: { messages: BaseMessage[] }) => {
       const last = state.messages[state.messages.length - 1];
-      if (!last || !("tool_calls" in last)) return END;
-      const toolCalls = (last as { tool_calls?: unknown[] }).tool_calls;
-      if (toolCalls && Array.isArray(toolCalls) && toolCalls.length > 0)
-        return "tools";
-      return END;
+      return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
     },
     ["tools", END]
   )
@@ -95,3 +88,4 @@ const agent = new StateGraph(MessagesAnnotation)
   .compile({ checkpointer });
 
 export { agent, STATIC_SYSTEM_PROMPT, model, tools };
+

@@ -117,6 +117,7 @@ app.use(
 
 // Agent card (A2A discovery)
 app.get(AGENT_CARD_PATH, (_req, res) => {
+  console.log("📄 GET", AGENT_CARD_PATH);
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.json(agentCard);
@@ -124,6 +125,7 @@ app.get(AGENT_CARD_PATH, (_req, res) => {
 
 // Agent URI (ERC-8004 metadata)
 app.get(AGENT_URI_PATH, (_req, res) => {
+  console.log("📄 GET", AGENT_URI_PATH);
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.json(agentUri);
@@ -131,6 +133,7 @@ app.get(AGENT_URI_PATH, (_req, res) => {
 
 // Chat endpoint
 app.post("/free-service", async (req, res) => {
+  console.log("💬 POST /free-service", req.body);
   const { message } = req.body;
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) required" });
@@ -154,6 +157,7 @@ app.post("/free-service", async (req, res) => {
 
 // x402 payable endpoint (same as /chat, requires payment)
 app.post("/paid-service", async (req, res) => {
+  console.log("💰 POST /paid-service", req.body);
   const { message } = req.body;
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) required" });
@@ -177,6 +181,7 @@ app.post("/paid-service", async (req, res) => {
 
 // Basic web landing page
 app.get("/", (_req, res) => {
+  console.log("🌐 GET /");
   res.setHeader("Content-Type", "text/html");
   res.send(`
 <!DOCTYPE html>
@@ -191,14 +196,17 @@ app.get("/", (_req, res) => {
 });
 
 app.post("/", async (req, res) => {
+  console.log("📮 POST /", req.body);
   res.json({ response: "MCP Service" });
 });
 
 app.post("/mcp/v1", async (req, res) => {
+  console.log("🔌 POST /mcp/v1", req.body);
   res.json({ response: "MCP Service" });
 });
 
 app.post("/a2a/v1", async (req, res) => {
+  console.log("🤖 POST /a2a/v1", req.body);
   res.json({ response: "A2A Service" });
 });
 

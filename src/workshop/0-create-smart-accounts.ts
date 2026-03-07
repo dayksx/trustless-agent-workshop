@@ -48,10 +48,7 @@ const bundlerClient = createBundlerClient({
 // Helpers
 // ============================================================================
 
-async function getOrCreateSmartAccount(
-  label: string,
-  privateKey: `0x${string}`
-): Promise<{ address: `0x${string}`; deployed: boolean }> {
+async function getOrCreateSmartAccount(  label: string,  privateKey: `0x${string}`): Promise<{ address: `0x${string}`; deployed: boolean }> {
   const account = privateKeyToAccount(privateKey);
 
   const smartAccount = await toMetaMaskSmartAccount({
@@ -72,9 +69,10 @@ async function getOrCreateSmartAccount(
   console.log(`  Deployed: ${deployed ? "yes" : "no"}`);
 
   if (!deployed) {
-    console.log(`  Deploying...`);
-    const { maxFeePerGas, maxPriorityFeePerGas } =
-      await publicClient.estimateFeesPerGas();
+
+    console.log(`  Deploying Smart Account...`);
+    const { maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas();
+    // Send User Operation to deploy the Smart Account
     const userOpHash = await bundlerClient.sendUserOperation({
       account: smartAccount,
       calls: [{ to: address, value: 0n, data: "0x" }],

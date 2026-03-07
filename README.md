@@ -82,6 +82,7 @@ Copy `.env.example` to `.env` and fill in:
 ## Documentation
 
 - [WORKSHOP-LANGGRAPH-AGENT.md](docs/WORKSHOP-LANGGRAPH-AGENT.md) – Workshop guide
+- [X402-PAYMENT.md](docs/X402-PAYMENT.md) – x402 payment protocol (technical guide, how to send requests with payment)
 - [DELEGATION-SCOPES-AND-CAVEATS.md](docs/DELEGATION-SCOPES-AND-CAVEATS.md) – ERC-7710 scopes reference
 - [USER-OPERATION-ERRORS.md](docs/USER-OPERATION-ERRORS.md) – UserOp error handling
 - [redeemDelegations-fr.md](docs/redeemDelegations-fr.md) – French delegation docs

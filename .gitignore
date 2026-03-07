@@ -16,6 +16,7 @@ logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+.pnpm-store
 
 # IDE
 .idea/
@@ -34,3 +35,4 @@ coverage/
 # Misc
 *.bak
 *.tmp
+
