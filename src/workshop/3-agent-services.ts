@@ -60,6 +60,7 @@ export const agentCard = {
 // AGENT URI (ERC-8004) - for discovery
 // ============================================================================
 
+// TODO (Step 5): Customize name and description before running workshop register
 export const agentUri = {
   type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
   name: "Workshop Swap Coordinator",
@@ -101,19 +102,14 @@ export const agentUri = {
 export const app = express();
 app.use(express.json());
 
-// x402: Payment middleware for /chat-paid (payTo from env, default test address)
+// x402: Payment middleware for /paid-service (payTo from env, default test address)
 const payTo =
   (process.env.PAY_TO_ADDRESS as `0x${string}`) ||
   "0x224b11F0747c7688a10aCC15F785354aA6493ED6";
-app.use(
-  paymentMiddleware(payTo, {
-    "/paid-service": {
-      price: "$0.01",
-      network: "base-sepolia",
-      config: { description: "Paid chat with Workshop Swap Coordinator" },
-    },
-  })
-);
+
+// TODO: Add x402 payment middleware for /paid-service
+// Use: app.use(paymentMiddleware(payTo, { "/paid-service": { price: "$0.01", network: "base-sepolia", config: { description: "Paid chat with Workshop Swap Coordinator" } } }))
+// See workshop-correction/3-agent-services.ts for the solution.
 
 // Agent card (A2A discovery)
 app.get(AGENT_CARD_PATH, (_req, res) => {

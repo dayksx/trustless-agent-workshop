@@ -4,7 +4,7 @@
  *
  * LangGraph workflow:
  * - Static system prompt
- * - Model + tools (delegate_transfer from 2-agent-tools)
+ * - Model + tools (transfer from 2-agent-tools)
  * - Agent graph (llm → tools → llm)
  *
  * Run: pnpm run workshop:1
@@ -30,8 +30,8 @@ import "dotenv/config";
 import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, MessagesAnnotation, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { SystemMessage, BaseMessage } from "@langchain/core/messages";
-import { delegateTransferTool } from "./2-agent-tools";
+import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
+import { lendingTool, stakingTool, swapTool, transferTool, yieldFarmingTool } from "./2-agent-tools";
 
 // ============================================================================
 // STATIC PROMPT
@@ -43,33 +43,48 @@ const STATIC_SYSTEM_PROMPT = `You are a transfer coordinator agent. Help users s
 // MODEL & TOOLS
 // ============================================================================
 
-// add model
+const model = new ChatOpenAI({
+  model: "gpt-4o-mini",
+  temperature: 0,
+  apiKey: process.env.LLM_API_KEY,
+});
 
-// add tools
+const tools = [transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool];
+const modelWithTools = model.bindTools(tools);
 
 // ============================================================================
 // LANGGRAPH AGENT RUNTIME
 // ============================================================================
-const toolNode = new ToolNode([]);
 
-const agent = new StateGraph(MessagesAnnotation)
+const toolNode = new ToolNode(tools);
+const checkpointer = new MemorySaver();
+
+const agentRuntime = new StateGraph(MessagesAnnotation)
   .addNode(
-    "llm", async (state: { messages: BaseMessage[] }) => {
-      // workshop placeholder:implement model node
-      return { messages: ["placeholder response"] };
+    "llm",
+    // LLM Node
+    async (state: { messages: BaseMessage[] }) => {
+      const response = await modelWithTools.invoke([
+        new SystemMessage(STATIC_SYSTEM_PROMPT),
+        ...state.messages,
+      ]);
+      return { messages: [response] };
     }
   )
-  // Tool node
+  // Tools Node
   .addNode("tools", toolNode)
+  // LLM Node's Conditional Edges
   .addConditionalEdges(
-    "llm", (state: { messages: BaseMessage[] }) => {
-      // workshop placeholder: implement conditional edge
-      return END;
+    "llm",
+    (state: { messages: BaseMessage[] }) => {
+      const last = state.messages[state.messages.length - 1];
+      return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
     },
     ["tools", END]
   )
   .addEdge(START, "llm")
   .addEdge("tools", "llm")
-  .compile();
+  .compile({ checkpointer });
 
-export { agent, STATIC_SYSTEM_PROMPT };
+export { agentRuntime, agentRuntime as agent, STATIC_SYSTEM_PROMPT, model, tools };
+

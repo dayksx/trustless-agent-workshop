@@ -16,7 +16,7 @@
  */
 
 import "dotenv/config";
-import { SDK } from 'agent0-sdk';
+import { SDK as Agent0 } from 'agent0-sdk';
 import { baseSepolia } from "viem/chains";
 
 import { agentUri, agentCard, AGENT_URI_PATH, AGENT_CARD_PATH } from './3-agent-services';
@@ -57,13 +57,13 @@ export async function registerAgent(): Promise<void> {
   // -------------------------------------------------------------------------
   // 2. Initialize SDK and create agent from agent-service data
   // -------------------------------------------------------------------------
-  const sdk = new SDK({
+  const agent0 = new Agent0({
     chainId: baseSepolia.id as number, // Ethereum Sepolia testnet
     rpcUrl: baseSepolia.rpcUrls.default.http[0],
     privateKey: process.env.DELEGATOR_PRIVATE_KEY, // Optional: private key for signing transactions
   });
 
-  const agent = sdk.createAgent(
+  const agent = agent0.createAgent(
     agentUri.name,
     agentUri.description,
     agentUri.image
@@ -126,6 +126,6 @@ export async function registerAgent(): Promise<void> {
   console.log(`   Discover on 8004scan (delayed):    ${discoverUrl}`);
 
   // Retrieve agent from subgraph (async in TypeScript)
-  const retrieved = await sdk.getAgent(registrationFile.agentId!);
+  const retrieved = await agent0.getAgent(registrationFile.agentId!);
   console.log(`✅ Retrieved from subgraph: ${retrieved?.name ?? registrationFile.agentId}`);
 }

@@ -4,7 +4,7 @@
  *
  * LangGraph workflow:
  * - Static system prompt
- * - Model + tools (delegate_transfer from 2-agent-tools)
+ * - Model + tools (transfer from 2-agent-tools)
  * - Agent graph (llm → tools → llm)
  *
  * Run: pnpm run workshop:1
@@ -31,7 +31,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, MessagesAnnotation, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
-import { delegateLendingTool, delegateStakingTool, delegateSwapTool, delegateTransferTool, delegateYieldFarmingTool } from "./2-agent-tools";
+// TODO: Import tools from ./2-agent-tools (transferTool, swapTool, etc.)
 
 // ============================================================================
 // STATIC PROMPT
@@ -42,14 +42,18 @@ const STATIC_SYSTEM_PROMPT = `You are a transfer coordinator agent. Help users s
 // ============================================================================
 // MODEL & TOOLS
 // ============================================================================
-
+// TODO: Configure your LLM model (ChatOpenAI, ChatAnthropic, ChatGroq, etc.)
+// See commented imports at top of file. Set LLM_API_KEY in .env.
 const model = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0,
   apiKey: process.env.LLM_API_KEY,
 });
 
-const tools = [delegateTransferTool, delegateSwapTool, delegateStakingTool, delegateYieldFarmingTool, delegateLendingTool];
+// TODO: Import tools from ./2-agent-tools and add to the array. Start with transferTool.
+// Example: import { transferTool } from "./2-agent-tools"; const tools = [transferTool];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tools: any[] = [];
 const modelWithTools = model.bindTools(tools);
 
 // ============================================================================
@@ -59,27 +63,26 @@ const modelWithTools = model.bindTools(tools);
 const toolNode = new ToolNode(tools);
 const checkpointer = new MemorySaver();
 
-const agent = new StateGraph(MessagesAnnotation)
+const agentRuntime = new StateGraph(MessagesAnnotation)
   .addNode(
     "llm",
-    // Model node
+    // TODO: Implement LLM node — invoke modelWithTools with system prompt + state.messages, return { messages: [response] }
+    // Hint: const response = await modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]);
+    //       return { messages: [response] };
     async (state: { messages: BaseMessage[] }) => {
-
-      const response = await modelWithTools.invoke([
-        new SystemMessage(STATIC_SYSTEM_PROMPT),
-        ...state.messages,
-      ]);
-      
-      return { messages: [response] };
+      throw new Error("TODO: Implement LLM invoke — call modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]) and return { messages: [response] }");
     }
   )
-  // Tool node
+  // Tools Node
   .addNode("tools", toolNode)
+  // LLM Node's Conditional Edges
+  // TODO: Implement routing — return "tools" when the last message has tool_calls, else END
+  // Hint: const last = state.messages[state.messages.length - 1];
+  //       return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
   .addConditionalEdges(
     "llm",
     (state: { messages: BaseMessage[] }) => {
-      const last = state.messages[state.messages.length - 1];
-      return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
+      return END; // TODO: replace with proper routing logic above
     },
     ["tools", END]
   )
@@ -87,5 +90,5 @@ const agent = new StateGraph(MessagesAnnotation)
   .addEdge("tools", "llm")
   .compile({ checkpointer });
 
-export { agent, STATIC_SYSTEM_PROMPT, model, tools };
+export { agentRuntime, agentRuntime as agent, STATIC_SYSTEM_PROMPT, model, tools };
 

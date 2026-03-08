@@ -24,15 +24,15 @@ export const transferTool = tool(
   async ({ recipient, amount, when }) => {
     console.log("Tool invoked: transfer");
     try {
-      // TODO: Implement transfer flow:
-      // 1. Call createTransferDelegation(recipient, amount, when) to get signedDelegation
-      // 2. Call callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, recipient, amount, when })
-      // 3. If data.error, return JSON.stringify({ error: data.error.message })
-      // 4. Else return JSON.stringify({ taskId, message }) with the result
+      const signedDelegation = await createTransferDelegation(recipient, amount, when);
+      const data = await callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, recipient, amount, when });
 
+      if (data.error) {
+        return JSON.stringify({ error: data.error.message });
+      }
 
       return JSON.stringify({
-        taskId: 1, // TODO: replace with data.result?.taskId,
+        taskId: data.result?.taskId,
         message: `Transfer successfully executed on-chain on behalf of the delegator. Transaction hash: ${data.result?.hash}`,
       });
 
@@ -63,18 +63,18 @@ export const swapTool = tool(
   async ({ tokenIn, tokenOut, amountIn, when }) => {
     console.log("Tool invoked: swap");
     try {
-      // TODO: Implement swap flow (same pattern as transferTool):
-      // 1. createSwapDelegation(tokenIn, tokenOut, amountIn, when)
-      // 2. callExternalAgent({ agentId: 2, skill: "swap", signedDelegation, tokenIn, tokenOut, amountIn, when })
-      // 3. If data.error, return JSON.stringify({ error: data.error.message })
-      // 4. Else return JSON.stringify({ taskId, message }) with the result
+      const signedDelegation = await createSwapDelegation(tokenIn, tokenOut, amountIn, when);
 
+      const data = await callExternalAgent({ agentId: 2, skill: "swap", signedDelegation, tokenIn, tokenOut, amountIn, when });
 
-      return JSON.stringify({
-        taskId: 1, // TODO: replace with data.result?.taskId,
-        message: `Swap successfully executed on-chain on behalf of the delegator. Transaction hash: ${data.result?.hash}`,
-      });
-
+      if (data.error) {
+        return JSON.stringify({ error: data.error.message });
+      }
+    return JSON.stringify({
+      taskId: data.result?.taskId,
+      message: `Swap successfully executed on-chain on behalf of the delegator. Transaction hash: ${data.result?.hash}`,
+    });
+    
     } catch (error: any) {
       return JSON.stringify({ 
         error: error.message 
@@ -103,15 +103,9 @@ export const stakingTool = tool(
   async ({ amount, when }) => {
     console.log("Tool invoked: staking");
     try {
-      // TODO: Implement staking flow (same pattern as transferTool):
-      // 1. createStakingDelegation(amount, when)
-      // 2. callExternalAgent({ agentId: 3, skill: "staking", signedDelegation, amount, when })
-      // 3. If data.error, return JSON.stringify({ error: data.error.message })
-      // 4. Else return JSON.stringify({ taskId, message }) with the result
-
-
+      // workshop placeholder: implement tool
       return JSON.stringify({
-        taskId: 1, // TODO: replace with data.result?.taskId,
+        taskId: 0,
         message: `Staking / Unstaking successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
       });
     } catch (error: any) {
@@ -139,15 +133,9 @@ export const yieldFarmingTool = tool(
   async ({ amount, when }) => {
     console.log("Tool invoked: yield_farming");
     try {
-      // TODO: Implement yield farming flow (same pattern as transferTool):
-      // 1. createYieldFarmingDelegation(amount, when)
-      // 2. callExternalAgent({ agentId: 4, skill: "yield_farming", signedDelegation, amount, when })
-      // 3. If data.error, return JSON.stringify({ error: data.error.message })
-      // 4. Else return JSON.stringify({ taskId, message }) with the result
-
-
+      // workshop placeholder: implement tool
       return JSON.stringify({
-        taskId: 1, // TODO: replace with data.result?.taskId,
+        taskId: 0,
         message: `Yield farming successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
       });
     } catch (error: any) {
@@ -175,15 +163,9 @@ export const lendingTool = tool(
   async ({ amount, when }) => {
     console.log("Tool invoked: lending");
     try {
-      // TODO: Implement lending flow (same pattern as transferTool):
-      // 1. createLendingDelegation(amount, when)
-      // 2. callExternalAgent({ agentId: 5, skill: "lending", signedDelegation, amount, when })
-      // 3. If data.error, return JSON.stringify({ error: data.error.message })
-      // 4. Else return JSON.stringify({ taskId, message }) with the result
-
-
+      // workshop placeholder: implement tool
       return JSON.stringify({
-        taskId: 1, // TODO: replace with data.result?.taskId,
+        taskId: 0,
         message: `Lending / Borrowing successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
       });
     } catch (error: any) {
