@@ -1,6 +1,18 @@
 # Trustless Agent Workshop
 
-Examples and workshop for building AI agents with **EIP-7702**, **ERC-7710** delegation, and related patterns. Uses LangGraph for the agent runtime and MetaMask Smart Accounts Kit for delegation.
+Build AI agents that act on behalf of users without holding their private keys. This workshop demonstrates fine-grain agent runtime and tooling development, least-privilege delegation with transparent authority boundaries, and agent-to-agent coordination with internet-native payment.
+
+**You will use:**
+
+- **LangGraph** — agent orchestration
+- **Express** — HTTP services
+- **x402** — paid endpoints
+- **MetaMask Smart Accounts Kit** — ERC-7710 delegation
+- **Agent0** — ERC-8004 identity registration
+
+By the end, you will know how to develop from scratch an agent that can reason, act on-chain via delegated authority, and monetize access securely.
+
+---
 
 ## Project Structure
 
