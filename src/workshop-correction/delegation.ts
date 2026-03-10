@@ -13,6 +13,7 @@ import type { Account } from "viem/accounts";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   createDelegation,
+  type Delegation,
   Implementation,
   toMetaMaskSmartAccount,
 } from "@metamask/smart-accounts-kit";
@@ -73,7 +74,14 @@ const publicClient = createPublicClient({
 // Delegation creation functions
 // ============================================================================
 
+/**
+ * Creates a transfer delegation.
+ *
+ * @param parentDelegation - When provided, creates a **redelegation** (child of this delegation).
+ *   When omitted, creates a **simple delegation** (top-level, no parent).
+ */
 export async function createTransferDelegation(
+  parentDelegation: unknown | undefined,
   recipient: string,
   amount: string,
   when?: string | null,
@@ -90,7 +98,8 @@ export async function createTransferDelegation(
   });
 
   const salt = (`0x` + randomBytes(32).toString("hex")) as `0x${string}`;
-  const delegation = createDelegation({
+
+  const redelegation = createDelegation({
     to: delegateAddress,
     from: delegatorSmartAccount.address,
     environment: delegatorSmartAccount.environment,
@@ -101,18 +110,22 @@ export async function createTransferDelegation(
     caveats: [
       {
         type: "allowedTargets",
-        targets: [recipient as `0x${string}`]
-      }
+        targets: [recipient as `0x${string}`],
+      },
     ],
     salt,
+    ...(parentDelegation ? { parentDelegation: parentDelegation as Delegation | `0x${string}` } : {}),
   });
 
-  console.log(" == delegation object == \n", delegation);
+  console.log(
+    "✍️  Delegation signed by: ",
+    `https://sepolia.basescan.org/address/${delegatorSmartAccount.address}`,
+  );
 
-  const signature = await delegatorSmartAccount.signDelegation({ delegation });
+  const signature = await delegatorSmartAccount.signDelegation({ delegation: redelegation });
 
   const signedDelegation = {
-    ...delegation,
+    ...redelegation,
     signature,
   };
 
@@ -155,8 +168,6 @@ export async function createSwapDelegation(
     caveats: [],
     salt,
   });
-
-  console.log(" == delegation object == \n", delegation);
 
   const signature = await delegatorSmartAccount.signDelegation({ delegation });
 

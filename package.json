@@ -6,9 +6,9 @@
   "packageManager": "pnpm@10.6.5",
   "scripts": {
     "workshop": "tsx src/workshop/index.ts",
+    "call-services": "tsx src/workshop/4-call-agent-services.ts",
     "workshop:correction": "tsx src/workshop-correction/index.ts",
-    "create-smart-accounts": "tsx src/workshop/0-create-smart-accounts.ts",
-    "call-services": "tsx src/workshop/4-call-agent-services.ts"
+    "call-services:correction": "tsx src/workshop-correction/4-call-agent-services.ts"
   },
   "keywords": [
     "eip-7702",

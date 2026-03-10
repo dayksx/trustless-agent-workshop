@@ -13,7 +13,7 @@
 import "dotenv/config";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
-import { createTransferDelegation, createSwapDelegation } from "./delegation";
+import { createSwapDelegation, createTransferDelegation } from "./delegation";
 import { callExternalAgent } from "./external-agent";
 
 // ============================================================================
@@ -21,11 +21,20 @@ import { callExternalAgent } from "./external-agent";
 // ============================================================================
 
 export const transferTool = tool(
-  async ({ recipient, amount, when }) => {
-    console.log("Tool invoked: transfer");
+  async ({ recipient, amount, when }, config?: any) => {
+    console.log("🛠️  Tool invoked: transfer");
     try {
-      const signedDelegation = await createTransferDelegation(recipient, amount, when);
-      const data = await callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, recipient, amount, when });
+      const parentDelegation = config?.configurable?.signedDelegation;
+      const signedDelegation = await createTransferDelegation(parentDelegation, recipient, amount, when);
+      const data = await callExternalAgent({
+        agentId: 1,
+        skill: "transfer",
+        signedDelegation,
+        parentDelegation,
+        recipient,
+        amount,
+        when,
+      });
 
       if (data.error) {
         return JSON.stringify({ error: data.error.message });
@@ -61,7 +70,7 @@ export const transferTool = tool(
 
 export const swapTool = tool(
   async ({ tokenIn, tokenOut, amountIn, when }) => {
-    console.log("Tool invoked: swap");
+    console.log("🛠️  Tool invoked: swap");
     try {
       const signedDelegation = await createSwapDelegation(tokenIn, tokenOut, amountIn, when);
 
@@ -101,7 +110,7 @@ export const swapTool = tool(
 
 export const stakingTool = tool(
   async ({ amount, when }) => {
-    console.log("Tool invoked: staking");
+    console.log("🛠️  Tool invoked: staking");
     try {
       // workshop placeholder: implement tool
       return JSON.stringify({
@@ -131,7 +140,7 @@ export const stakingTool = tool(
 
 export const yieldFarmingTool = tool(
   async ({ amount, when }) => {
-    console.log("Tool invoked: yield_farming");
+    console.log("🛠️  Tool invoked: yield_farming");
     try {
       // workshop placeholder: implement tool
       return JSON.stringify({
@@ -161,7 +170,7 @@ export const yieldFarmingTool = tool(
 
 export const lendingTool = tool(
   async ({ amount, when }) => {
-    console.log("Tool invoked: lending");
+    console.log("🛠️  Tool invoked: lending");
     try {
       // workshop placeholder: implement tool
       return JSON.stringify({

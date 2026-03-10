@@ -13,10 +13,12 @@
  */
 
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import express from "express";
 import { paymentMiddleware } from "x402-express";
 import { HumanMessage } from "@langchain/core/messages";
 import { agent } from "./1-agent-runtime";
+import { createTransferDelegation, getDelegationContextUserToAgent1 } from "./delegation";
 
 // ============================================================================
 // PORT
@@ -101,6 +103,14 @@ export const agentUri = {
 export const app = express();
 app.use(express.json());
 
+// Log when HTTP request meets the facilitator to pay x402
+app.use((req, _res, next) => {
+  if (req.path === "/paid-service" && req.header("X-PAYMENT")) {
+    console.log("💳 x402 facilitator meets the HTTP request to fulfill the payment using the X-PAYMENT header");
+  }
+  next();
+});
+
 // x402: Payment middleware for /chat-paid (payTo from env, default test address)
 const payTo =
   (process.env.PAY_TO_ADDRESS as `0x${string}`) ||
@@ -140,9 +150,15 @@ app.post("/free-service", async (req, res) => {
   }
 
   try {
+    const amount = "0.001";
+    const when = "now";
+    const recipient = process.env.TARGET_ADDRESS!;
+
+    const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
+
     const result = await agent.invoke(
       { messages: [new HumanMessage(message)] },
-      { configurable: { thread_id: "workshop-demo" } }
+      { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
     );
     const lastMsg = result.messages[result.messages.length - 1];
     const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";
@@ -164,9 +180,16 @@ app.post("/paid-service", async (req, res) => {
   }
 
   try {
+    const amount = "0.001";
+    const when = "now";
+    const recipient = process.env.TARGET_ADDRESS!;
+    const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
+
+    const transferMessage = `Transfer ${amount} ETH to ${recipient} ${when}`;
+
     const result = await agent.invoke(
-      { messages: [new HumanMessage(message)] },
-      { configurable: { thread_id: "workshop-demo" } }
+      { messages: [new HumanMessage(transferMessage)] },
+      { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
     );
     const lastMsg = result.messages[result.messages.length - 1];
     const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";
@@ -225,15 +248,16 @@ export async function startServer(): Promise<void> {
       console.log(`
 🧪 Workshop Agent Services at http://localhost:${PORT}
 
-  Agent Card (A2A):     http://localhost:${PORT}${AGENT_CARD_PATH}
-  Agent URI (ERC-8004): http://localhost:${PORT}${AGENT_URI_PATH}
-  Service:                 POST http://localhost:${PORT}/free-service   { "message": "Swap 1 ETH to USDC now" }
-  Service (x402):          POST http://localhost:${PORT}/paid-service   { "message": "..." } ($0.01 USDC on base-sepolia)
-  MCP:                  POST http://localhost:${PORT}/mcp/v1
-  A2A:                  POST http://localhost:${PORT}/a2a/v1
-  Web:                  GET  http://localhost:${PORT}/
+  📁 Agent Card (A2A):     http://localhost:${PORT}${AGENT_CARD_PATH}
+  📁 Agent URI (ERC-8004): http://localhost:${PORT}${AGENT_URI_PATH}
+  🔗 Service:                 POST http://localhost:${PORT}/free-service   { "message": "Swap 1 ETH to USDC now" }
+  🔗 Service (x402):          POST http://localhost:${PORT}/paid-service   { "message": "..." } ($0.01 USDC on base-sepolia)
+  🔗 MCP:                  POST http://localhost:${PORT}/mcp/v1
+  🔗 A2A:                  POST http://localhost:${PORT}/a2a/v1
+  🖥  Web:                  GET  http://localhost:${PORT}/
 
-  curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"}'
+  💬 curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"}'
+  💬 pnpm run call-services free --message "Send 0.00000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
 `);
       resolve();
     });

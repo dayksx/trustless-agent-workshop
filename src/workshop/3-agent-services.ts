@@ -138,7 +138,7 @@ app.post("/free-service", async (req, res) => {
   try {
     const result = await agent.invoke(
       { messages: [new HumanMessage(message)] },
-      { configurable: { thread_id: "workshop-demo" } }
+      { configurable: { thread_id: "workshop-demo", } }
     );
     const lastMsg = result.messages[result.messages.length - 1];
     const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";

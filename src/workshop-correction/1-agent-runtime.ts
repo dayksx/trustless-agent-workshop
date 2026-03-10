@@ -63,8 +63,8 @@ const checkpointer = new MemorySaver();
 const agent = new StateGraph(AgentStateAnnotation)
   .addNode(
     "llm",
-    // LLM Node
     async (state: typeof AgentStateAnnotation.State) => {
+      console.log("🤖 LLM node invoked");
       const response = await modelWithTools.invoke([
         new SystemMessage(STATIC_SYSTEM_PROMPT),
         ...state.messages,
@@ -72,12 +72,11 @@ const agent = new StateGraph(AgentStateAnnotation)
       return { messages: [response] };
     }
   )
-  // Tools Node
   .addNode("tools", toolNode)
-  // LLM Node's Conditional Edges
   .addConditionalEdges(
     "llm",
     (state: typeof AgentStateAnnotation.State) => {
+      console.log("🔀 Conditional edges invoked");
       const last = state.messages[state.messages.length - 1];
       return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
     },

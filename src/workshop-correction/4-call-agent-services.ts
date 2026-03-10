@@ -90,21 +90,21 @@ async function post(url: string, body: object): Promise<unknown> {
 
 async function runAgentCard(baseUrl: string): Promise<void> {
   const url = `${baseUrl}${AGENT_CARD_PATH}`;
-  console.log(`\n→ GET ${url}`);
+  console.log(`\n➡️  GET ${url}`);
   const data = await get(url);
   console.log(JSON.stringify(data, null, 2));
 }
 
 async function runAgentUri(baseUrl: string): Promise<void> {
   const url = `${baseUrl}${AGENT_URI_PATH}`;
-  console.log(`\n→ GET ${url}`);
+  console.log(`\n➡️  GET ${url}`);
   const data = await get(url);
   console.log(JSON.stringify(data, null, 2));
 }
 
 async function runFree(baseUrl: string, message: string): Promise<void> {
   const url = `${baseUrl}/free-service`;
-  console.log(`\n→ POST ${url} { message: "${message}" }`);
+  console.log(`\n➡️  POST ${url} { message: "${message}" }`);
   const data = await post(url, { message });
   console.log(JSON.stringify(data, null, 2));
 }
@@ -122,22 +122,13 @@ async function runPaid(baseUrl: string, message: string): Promise<void> {
     signer
   );
 
-  console.log(`\n→ POST ${baseUrl}/paid-service { message: "${message}" } (x402)`);
+  console.log(`\n➡️  POST ${baseUrl}/paid-service { message: "${message}" } (x402)`);
   try {
     // call with x402 payment interceptor
     const response = await api.post("/paid-service", { message });
 
-    console.log(JSON.stringify(response.data, null, 2));
+    console.log(`💬 Response: ${JSON.stringify(response.data, null, 2)}`);
 
-    const paymentResponseHeader = response.headers["x-payment-response"] ?? response.headers["X-PAYMENT-RESPONSE"];
-    if (paymentResponseHeader) {
-      try {
-        const decoded = decodeXPaymentResponse(paymentResponseHeader);
-        console.log("\n✓ Facilitator response (X-PAYMENT-RESPONSE):", JSON.stringify(decoded, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2));
-      } catch {
-        console.log("\n✓ Payment settled (X-PAYMENT-RESPONSE header present)");
-      }
-    }
   } catch (err: unknown) {
     const axiosErr = err as { response?: { status?: number; data?: unknown; headers?: Record<string, string> } };
     if (axiosErr.response) {
@@ -187,8 +178,7 @@ Options:
 Examples:
   pnpm run call-services
   pnpm run call-services agent-card
-  pnpm run call-services free --message "Swap 0.001 ETH to USDC"
-  pnpm run call-services paid --message "Swap 0.001 ETH to USDC"  # needs EVM_PRIVATE_KEY
+  pnpm run call-services free --message "Send 0.00042 ETH to 0x2B52e3A8bBdE66262E10f15578769ACd4812249d"
 `);
 }
 
