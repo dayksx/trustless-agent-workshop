@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Workshop: Call Agent Services via CLI
+ * Call Agent Services via CLI
  *
  * Tests different agent service endpoints from the command line.
  * Requires the agent server to be running (pnpm run workshop launch).
@@ -23,7 +23,7 @@
  */
 
 import "dotenv/config";
-import { withPaymentInterceptor, createSigner, decodeXPaymentResponse } from "x402-axios";
+import { withPaymentInterceptor, createSigner } from "x402-axios";
 import axios from "axios";
 
 const DEFAULT_BASE = "http://localhost:3000";
@@ -124,11 +124,8 @@ async function runPaid(baseUrl: string, message: string): Promise<void> {
 
   console.log(`\n➡️  POST ${baseUrl}/paid-service { message: "${message}" } (x402)`);
   try {
-    // call with x402 payment interceptor
     const response = await api.post("/paid-service", { message });
-
     console.log(`💬 Response: ${JSON.stringify(response.data, null, 2)}`);
-
   } catch (err: unknown) {
     const axiosErr = err as { response?: { status?: number; data?: unknown; headers?: Record<string, string> } };
     if (axiosErr.response) {

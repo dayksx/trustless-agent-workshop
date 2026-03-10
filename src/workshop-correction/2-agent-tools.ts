@@ -13,8 +13,8 @@
 import "dotenv/config";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
-import { createSwapDelegation, createTransferDelegation } from "./delegation";
-import { callExternalAgent } from "./external-agent";
+import { createSwapDelegation, createTransferDelegation } from "../lib/delegation";
+import { callExternalAgent } from "../lib/external-agent";
 
 // ============================================================================
 // Tools
@@ -205,4 +205,4 @@ export {
   type DelegationContext,
   getDelegationContextAgent1ToAgent2,
   getDelegationContextUserToAgent1,
-} from "./delegation";
+} from "../lib/delegation";

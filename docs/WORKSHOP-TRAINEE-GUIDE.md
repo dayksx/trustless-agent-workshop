@@ -216,7 +216,7 @@
    pnpm run call-services paid --message "Hello"
    ```
 
-7. **Open** `src/workshop/4-call-agent-services.ts`:
+7. **Open** `src/lib/call-agent-services.ts`:
    - Find `runPaid` — it uses `createSigner` and `withPaymentInterceptor`
    - The interceptor handles the 402 flow: get price → pay → retry request
 

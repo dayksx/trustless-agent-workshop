@@ -17,41 +17,55 @@ import { HumanMessage } from "@langchain/core/messages";
 // ============================================================================
 // ÉTAPE 1: Agent Runtime (1-agent-runtime.ts) & Tools (2-agent-tools.ts) with delegation
 // ============================================================================
-import { agentRuntime } from "./1-agent-runtime";
+import { agent } from "./1-agent-runtime";
 
 // ============================================================================
 // ÉTAPE 3: Services HTTP (3-agent-services.ts)
 // ============================================================================
-import {  startServer } from "./3-agent-services";
+import { startServer } from "./3-agent-services";
 
 // ============================================================================
 // ÉTAPE 4: Registration (4-agent-registration.ts)
 // ============================================================================
 import { registerAgent } from "./4-agent-registration";
-import { createSmartAccounts } from "./0-create-smart-accounts";
+import { createSmartAccounts } from "../lib/create-smart-accounts";
+import {
+  createTransferDelegation,
+  getDelegationContextUserToAgent1,
+} from "../lib/delegation";
+import { getBalances } from "../lib/balance-service";
 
 // ============================================================================
 // RUN
 // ============================================================================
 
-async function test() {
-  if (!process.env.LLM_API_KEY) {
-    throw new Error("Set LLM_API_KEY in .env");
+async function balances() {
+  const { ethUsdPrice, balances } = await getBalances();
+  console.log("\n💰 Base Sepolia balances (ETH + USD)\n");
+  console.log(`ETH/USD: $${ethUsdPrice.toFixed(2)}\n`);
+  for (const b of balances) {
+    console.log(`  ${b.label.padEnd(14)} ${b.address}  ${b.eth} ETH  $${b.usd} USD`);
   }
-  const r = await agentRuntime.invoke(
-    {
-      messages: [
-        new HumanMessage(
-          "Lend 0.000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
-        ),
-      ],
-    },
-    { configurable: { thread_id: "workshop-demo" } }
-  );
-  console.log("\n--- Agent response ---");
-  console.log(r.messages.at(-1)?.content ?? "No response");
+  console.log("");
 }
 
+async function test() {
+  
+  const amount = "0.000000111";
+  const when = "now";
+  const recipient = process.env.TARGET_ADDRESS!;
+
+  const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
+
+  const r = await agent.invoke(
+    {
+      messages: [new HumanMessage(`Transfer ${amount} ETH to ${recipient} ${when}`)],
+    },
+    { configurable: { thread_id: "workshop-demo", signedDelegation } }
+  );
+  console.log("\n 💬 AI response:");
+  console.log(r.messages.at(-1)?.content ?? "No response");
+}
 
 function printHelp() {
   console.log(`
@@ -64,6 +78,7 @@ Steps:
   test     Test agent (runtime + tools)
   launch   Start HTTP server (agent card, free/paid services)
   register On-chain agent registration (ERC-8004)
+  balances Show ETH + USD balances for USER_SA, AGENT1_SA, AGENT2_SA (Base Sepolia)
 
 Run 'create' first to get AGENT1_SA_ADDRESS and AGENT2_SA_ADDRESS for .env
 `);
@@ -83,6 +98,9 @@ async function main() {
       break;
     case "create":
       await createSmartAccounts();
+      break;
+    case "balances":
+      await balances();
       break;
     default:
       printHelp();

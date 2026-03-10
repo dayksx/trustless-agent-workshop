@@ -11,13 +11,102 @@
  */
 
 import "dotenv/config";
-import { createPublicClient, encodeFunctionData, formatEther, http, parseEther } from "viem";
+import { createPublicClient, encodeFunctionData, http, parseEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { createBundlerClient } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
 import { createExecution, ExecutionMode } from "@metamask/delegation-toolkit";
 import { DelegationManager } from "@metamask/delegation-toolkit/contracts";
 import { Implementation, toMetaMaskSmartAccount } from "@metamask/smart-accounts-kit";
+
+/** Decode hex revert reason and return human-readable hints for all known error codes. */
+function decodeRedeemDelegationError(message: string): string[] {
+  const hints: string[] = [];
+  const hexMatch = message.match(/0x[0-9a-fA-F]+/);
+  const hex = hexMatch?.[0];
+  if (!hex) return hints;
+
+  // Error(string) selector = 0x08c379a0
+  if (hex.startsWith("0x08c379a0") && hex.length > 10) {
+    try {
+      const data = hex.slice(10); // after selector
+      const lenHex = data.slice(64, 128); // bytes 32-63 = length
+      const len = parseInt(lenHex, 16);
+      const strHex = data.slice(128, 128 + len * 2);
+      const decoded = Buffer.from(strHex, "hex").toString("utf8");
+      hints.push(`Decoded: ${decoded}`);
+
+      // Map known Error(string) reasons to hints
+      const errorHints: Record<string, string> = {
+        "allowance-exceeded":
+          "NativeTokenTransferAmountEnforcer: Amount exceeds delegation maxAmount, or delegation already redeemed. Use a unique salt per delegation; create a fresh one if already redeemed.",
+        "target-address-not-allowed":
+          "AllowedTargetsEnforcer: The execution target is not in the delegation's allowedTargets caveat. Add the target address to caveats.allowedTargets.targets.",
+        "target-not-allowed": "AllowedTargetsEnforcer: Target not in allowedTargets. Add the target to caveats.",
+        "method-not-allowed":
+          "AllowedMethodsEnforcer: The function selector is not in the delegation's allowedMethods. Add the selector to caveats.allowedMethods.selectors.",
+        "cannot-redeem-too-early":
+          "TimestampEnforcer: Redeem is before afterThreshold. Wait until the delegation is valid.",
+        "cannot-redeem-too-late":
+          "TimestampEnforcer: Redeem is after beforeThreshold. Create a new delegation with extended validity.",
+        "block-too-early": "BlockNumberEnforcer: Block is before afterThreshold.",
+        "block-too-late": "BlockNumberEnforcer: Block is after beforeThreshold.",
+        "limit-exceeded":
+          "LimitedCallsEnforcer: Max redemptions reached. Create a new delegation.",
+        "redeemer-not-allowed":
+          "RedeemerEnforcer: The redeemer address is not in caveats.redeemer.redeemers.",
+        "value-exceeds-max":
+          "ValueLteEnforcer: Native value exceeds caveat maxValue.",
+        "calldata-mismatch": "ExactCalldataEnforcer / AllowedCalldataEnforcer: Calldata does not match.",
+        "execution-mismatch": "ExactExecutionEnforcer: Target, value, or calldata does not match.",
+      };
+      for (const [key, hint] of Object.entries(errorHints)) {
+        if (decoded.toLowerCase().includes(key.replace(/-/g, "")) || decoded.includes(key)) {
+          hints.push(hint);
+          break;
+        }
+      }
+    } catch {
+      // ignore decode errors
+    }
+  }
+
+  // DelegationManager custom errors (0xb5863604 and similar)
+  if (hex.includes("b5863604")) {
+    hints.push(
+      "DelegationManager (0xb5863604): Possible causes — InvalidDelegate (delegate ≠ redeemer), CannotUseADisabledDelegation, insufficient delegator balance, or caveat enforcer failure.",
+      "→ Ensure AGENT2_SA_ADDRESS matches the smart account from AGENT2_PRIVATE_KEY (DeleGator, not EOA).",
+      "→ Fund the delegator on Base Sepolia. Check caveat limits (allowedTargets, nativeTokenTransferAmount, etc.)."
+    );
+  }
+
+  // EntryPoint AAxx codes (from USER-OPERATION-ERRORS.md)
+  const aaMatch = message.match(/AA(\d{2})/);
+  if (aaMatch) {
+    const aa = aaMatch[1];
+    const aaHints: Record<string, string> = {
+      "10": "AA10: Sender already constructed — remove initCode for existing accounts.",
+      "13": "AA13: initCode failed or OOG — check factory, increase verificationGasLimit.",
+      "20": "AA20: Account not deployed — include initCode for first transaction.",
+      "21": "AA21: Didn't pay prefund — fund the account or use a paymaster.",
+      "22": "AA22: Expired or not due — check validUntil/validAfter timestamps.",
+      "23": "AA23: Reverted (OOG) — check signature, increase verificationGasLimit.",
+      "24": "AA24: Signature error — verify private key and signature format.",
+      "25": "AA25: Invalid account nonce — fetch current nonce before submitting.",
+      "30": "AA30: Paymaster not deployed.",
+      "31": "AA31: Paymaster deposit too low.",
+      "32": "AA32: Paymaster expired or not due.",
+      "33": "AA33: Paymaster reverted.",
+      "40": "AA40: Over verification gas limit.",
+      "41": "AA41: Too little verification gas.",
+      "50": "AA50: PostOp reverted.",
+      "51": "AA51: prefund below actualGasCost.",
+    };
+    if (aaHints[aa]) hints.push(aaHints[aa]);
+  }
+
+  return hints;
+}
 
 const WETH_BASE_SEPOLIA = "0x4200000000000000000000000000000000000006" as const;
 const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const;
@@ -51,6 +140,8 @@ export interface CallExternalAgentParams {
   agentId: number;
   skill: "transfer" | "swap";
   signedDelegation: unknown;
+  /** For redelegation chains (user > agent1 > agent2): parent signed delegation. Chain order: [signedDelegation, parentDelegation] = leaf to root. */
+  parentDelegation?: unknown;
   when?: string | null;
   // transfer-specific
   recipient?: string;
@@ -66,7 +157,7 @@ export interface CallExternalAgentParams {
  * Routes to different redeeming logic based on skill.
  */
 export async function callExternalAgent(params: CallExternalAgentParams): Promise<any> {
-  const { agentId, skill, signedDelegation } = params;
+  const { skill } = params;
 
   switch (skill) {
     case "transfer":
@@ -80,15 +171,18 @@ export async function callExternalAgent(params: CallExternalAgentParams): Promis
 
 /**
  * Shared logic: redeem a delegation on-chain with the given execution.
+ * For redelegation chains (user > agent1 > agent2), pass parentDelegation so the full
+ * chain [signedDelegation, parentDelegation] (leaf to root) is sent to redeemDelegations.
  */
 async function redeemDelegationOnChain(opts: {
   agentId: number;
   signedDelegation: unknown;
+  /** Parent signed delegation for redelegation chains. Chain = [signedDelegation, parentDelegation] leaf→root. */
+  parentDelegation?: unknown;
   execution: ReturnType<typeof createExecution>;
   successMessage: string;
-  amountForError?: string;
 }): Promise<any> {
-  const { agentId, signedDelegation, execution, successMessage, amountForError } = opts;
+  const { agentId, signedDelegation, parentDelegation, execution, successMessage } = opts;
   const env = process.env;
   const delegatePrivateKey = env.AGENT2_PRIVATE_KEY as `0x${string}` | undefined;
   const bundlerBaseSepoliaUrl = env.BUNDLER_BASE_SEPOLIA_URL as string | undefined;
@@ -105,7 +199,7 @@ async function redeemDelegationOnChain(opts: {
     const bundlerClient = createBundlerClient({
       client: publicClient,
       transport: http(bundlerBaseSepoliaUrl),
-      paymaster: process.env.USE_PAYMASTER === "true",
+      ...(process.env.USE_PAYMASTER === "true" && { paymaster: true as const }),
     });
 
     const delegateAccount = privateKeyToAccount(delegatePrivateKey as `0x${string}`);
@@ -120,16 +214,20 @@ async function redeemDelegationOnChain(opts: {
 
     const { maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas();
 
-    const delegations = [signedDelegation as any];
+    // Delegation chain: leaf to root. For redelegation (user>agent1>agent2): [agent1->agent2, user->agent1]
+    const delegationChain = parentDelegation
+      ? [signedDelegation as any, parentDelegation as any]
+      : [signedDelegation as any];
     const executions = [execution as any];
 
     const redeemDelegationCalldata = DelegationManager.encode.redeemDelegations({
-      delegations: [delegations],
+      delegations: [delegationChain],
       modes: [ExecutionMode.SingleDefault],
       executions: [executions],
     });
 
-    console.log(`[mock agentId=${agentId}] delegate address:`, delegateSmartAccount.address);
+    console.log("🔗 Sending UserOps with Delegations chain [user->agent1] from [agent2]: ", delegateSmartAccount.address);
+
     const userOperationHash = await bundlerClient.sendUserOperation({
       account: delegateSmartAccount,
       calls: [
@@ -146,10 +244,19 @@ async function redeemDelegationOnChain(opts: {
       hash: userOperationHash,
     });
 
-    console.log(
-      ` ${successMessage} \n`,
-      JSON.stringify(receipt, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2)
-    );
+    const txHash = receipt.receipt?.transactionHash;
+
+
+    const essential = {
+      userOpHash: receipt.userOpHash,
+      txHash,
+      txUrl: txHash ? `https://sepolia.basescan.org/tx/${txHash}` : undefined,
+      blockNumber: receipt.receipt?.blockNumber,
+      success: receipt.success,
+      gasUsed: receipt.actualGasUsed,
+      gasCost: receipt.actualGasCost,
+    };
+    console.log(`✅ ${successMessage}\n`, JSON.stringify(essential, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2));
 
     return {
       result: {
@@ -160,72 +267,15 @@ async function redeemDelegationOnChain(opts: {
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("Redeem delegation failed:", message);
-    if (err instanceof Error && err.stack) {
-      console.error(err.stack);
-    }
-    // Decode allowance-exceeded (0x08c379a0 = Error(string))
-    if (message.includes("allowance-exceeded") || message.includes("616c6c6f77616e63652d6578636565646564")) {
-      console.error(
-        `\n--- NativeTokenTransferAmountEnforcer: allowance-exceeded ---\n` +
-          `  The transfer amount exceeds the delegation's maxAmount (caveat).\n` +
-          `  Each delegation has a one-time allowance. If you already redeemed this delegation,\n` +
-          `  create a fresh one. Ensure the amount in the tool matches the delegation's maxAmount.\n`
-      );
-    }
-    // Decode common simulation revert: 0xb5863604 (may be balance, caveat, or other delegation issue)
-    else if (message.includes("0xb5863604")) {
-      const delegatorAddr = (signedDelegation as { delegator?: string })?.delegator;
-      const amountNeededStr = amountForError ?? env.REDEEM_VALUE_ETH ?? "0";
-      const amountNeededWei = parseEther(amountNeededStr);
+    console.error("❌ Redeem delegation failed:", message);
 
-      if (delegatorAddr) {
-        try {
-          const publicClient = createPublicClient({
-            chain: baseSepolia,
-            transport: http(),
-          });
-          const balance = await publicClient.getBalance({ address: delegatorAddr as `0x${string}` });
-          const isSufficientForTransfer = balance >= amountNeededWei;
-
-          console.error(
-            `\n--- Delegator account (0xb5863604) ---\n` +
-              `  Smart account:   ${delegatorAddr}\n` +
-              `  Current balance: ${formatEther(balance)} ETH\n` +
-              `  Transfer amount: ${amountNeededStr} ETH\n`
-          );
-          if (isSufficientForTransfer) {
-            console.error(
-              `  Balance is sufficient. 0xb5863604 is likely InvalidDelegate:\n` +
-                `  - The delegate in the delegation must match the redeemer (msg.sender).\n` +
-                `  - Ensure AGENT2_PRIVATE_KEY is set when creating delegations (2-agent-tools)\n` +
-                `    so the delegator uses the correct DeleGator address, not AGENT2_EOA_ADDRESS (EOA).\n` +
-                `  - Or: AGENT2_SA_ADDRESS must be the DeleGator address, not the EOA.\n`
-            );
-          } else {
-            console.error(
-              `  Insufficient: need at least ${amountNeededStr} ETH (+ gas if not using paymaster).\n` +
-                `  Fund: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet\n`
-            );
-          }
-        } catch (balanceErr) {
-          console.error(
-            `\n--- Delegator account ---\n` +
-              `  Smart account: ${delegatorAddr}\n` +
-              `  Amount needed: ${amountNeededStr} ETH\n`
-          );
-        }
-      } else {
-        console.error(
-          "\nTroubleshooting 0xb5863604: Check delegator balance, caveat enforcers, and delegation status."
-        );
-      }
+    const hints = decodeRedeemDelegationError(message);
+    if (hints.length > 0) {
+      console.error("\nℹ️  Possible error reasons: ");
+      hints.forEach((h) => console.error("  →", h));
     }
-    return {
-      error: {
-        message,
-      },
-    };
+
+    return { error: { message } };
   }
 }
 
@@ -233,7 +283,7 @@ async function redeemDelegationOnChain(opts: {
  * Redeem transfer delegation on-chain.
  */
 async function redeemDelegationTransfer(params: CallExternalAgentParams): Promise<any> {
-  const { agentId, signedDelegation, recipient, amount } = params;
+  const { agentId, signedDelegation, parentDelegation, recipient, amount } = params;
   if (!recipient || !amount) throw new Error("Missing recipient or amount");
 
   const execution = createExecution({
@@ -245,9 +295,9 @@ async function redeemDelegationTransfer(params: CallExternalAgentParams): Promis
   return redeemDelegationOnChain({
     agentId,
     signedDelegation,
+    parentDelegation,
     execution,
     successMessage: "Transfer successfully redeemed on-chain",
-    amountForError: amount,
   });
 }
 
@@ -312,6 +362,5 @@ async function redeemDelegationSwap(params: CallExternalAgentParams): Promise<an
     signedDelegation,
     execution,
     successMessage: "Swap successfully redeemed on-chain",
-    amountForError: amountIn,
   });
 }

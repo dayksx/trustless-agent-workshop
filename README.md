@@ -277,15 +277,19 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 ```
 src/
+├── lib/                         # Shared (trainees don't modify)
+│   ├── agent-state.ts
+│   ├── balance-service.ts
+│   ├── call-agent-services.ts   # CLI: pnpm run call-services
+│   ├── create-smart-accounts.ts # pnpm run workshop create
+│   ├── delegation.ts
+│   └── external-agent.ts
 ├── workshop/                    # Your workspace
-│   ├── 0-create-smart-accounts.ts
-│   ├── 1-agent-runtime.ts       # TODO: LLM invoke, conditional edge, add tools to array
+│   ├── 1-agent-runtime.ts      # TODO: LLM invoke, conditional edge, add tools to array
 │   ├── 2-agent-tools.ts         # transferTool, swapTool (call delegation)
 │   ├── 3-agent-services.ts      # TODO: x402 payment for /paid-service; HTTP server, agent card
 │   ├── 4-agent-registration.ts
-│   ├── 4-call-agent-services.ts
-│   ├── delegation.ts            # TODO: createTransferDelegation, createSwapDelegation
-│   └── external-agent.ts
+│   └── index.ts
 └── workshop-correction/         # Reference solution
 ```
 

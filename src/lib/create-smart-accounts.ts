@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Workshop Step 0: Create Smart Accounts
+ * Create Smart Accounts
  *
  * Creates MetaMask Hybrid smart accounts for AGENT1_EOA_ADDRESS and
  * AGENT2_EOA_ADDRESS. Computes deterministic addresses and deploys them
@@ -8,7 +8,7 @@
  *
  * Requires: AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
  *
- * Usage: pnpm exec tsx src/workshop-empty/0-create-smart-accounts.ts
+ * Usage: pnpm run workshop create
  */
 
 import "dotenv/config";
@@ -48,7 +48,7 @@ const bundlerClient = createBundlerClient({
 // Helpers
 // ============================================================================
 
-async function getOrCreateSmartAccount(  label: string,  privateKey: `0x${string}`): Promise<{ address: `0x${string}`; deployed: boolean }> {
+async function getOrCreateSmartAccount(label: string, privateKey: `0x${string}`): Promise<{ address: `0x${string}`; deployed: boolean }> {
   const account = privateKeyToAccount(privateKey);
 
   const smartAccount = await toMetaMaskSmartAccount({
@@ -69,10 +69,8 @@ async function getOrCreateSmartAccount(  label: string,  privateKey: `0x${string
   console.log(`  Deployed: ${deployed ? "yes" : "no"}`);
 
   if (!deployed) {
-
     console.log(`  Deploying Smart Account...`);
     const { maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas();
-    // Send User Operation to deploy the Smart Account
     const userOpHash = await bundlerClient.sendUserOperation({
       account: smartAccount,
       calls: [{ to: address, value: 0n, data: "0x" }],
@@ -97,8 +95,8 @@ export async function createSmartAccounts() {
   console.log("Creating smart accounts for DELEGATOR and DELEGATE EOAs...\n");
 
   const [delegator, delegate] = await Promise.all([
-    getOrCreateSmartAccount("Delegator", delegatorPrivateKey),
-    getOrCreateSmartAccount("Delegate", delegatePrivateKey),
+    getOrCreateSmartAccount("Delegator", delegatorPrivateKey!),
+    getOrCreateSmartAccount("Delegate", delegatePrivateKey!),
   ]);
 
   console.log("\n--- Add these to your .env ---\n");

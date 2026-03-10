@@ -117,12 +117,12 @@ Facilitator guide for the Trustless Agent Workshop. Use this to structure sessio
 2. Identify: `payTo` address, route config (`price`, `network`).
 3. Run `pnpm run workshop launch` and call `/free-service` (no payment).
 4. **Exercise**: Call `/paid-service` with `pnpm run call-services paid --message "Hello"` (requires `EVM_PRIVATE_KEY` + USDC).
-5. **Exercise**: Inspect `4-call-agent-services.ts` to see how `withPaymentInterceptor` and `createSigner` work.
+5. **Exercise**: Inspect `lib/call-agent-services.ts` to see how `withPaymentInterceptor` and `createSigner` work.
 
 ### Code Reference
 
 - `src/workshop/3-agent-services.ts` — `paymentMiddleware`, `/free-service`, `/paid-service`
-- `src/workshop/4-call-agent-services.ts` — `runPaid`, `withPaymentInterceptor`, `createSigner`
+- `src/lib/call-agent-services.ts` — `runPaid`, `withPaymentInterceptor`, `createSigner`
 - `docs/X402-PAYMENT.md` — x402 technical guide
 
 ---

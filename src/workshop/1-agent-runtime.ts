@@ -28,10 +28,11 @@ import "dotenv/config";
 // import { ChatFireworks } from "@langchain/community";    // FIREWORKS_API_KEY     → accounts/fireworks/models/llama-v3p1-70b
 // import { ChatOpenRouter } from "@langchain/community";   // OPENROUTER_API_KEY    → anthropic/claude-3.5-sonnet, openai/gpt-4o
 import { ChatOpenAI } from "@langchain/openai";
-import { StateGraph, MessagesAnnotation, START, END, MemorySaver } from "@langchain/langgraph";
+import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
-// TODO: Import tools from ./2-agent-tools (transferTool, swapTool, etc.)
+// TODO: Import tools from ./2-agent-tools (transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool)
+import { AgentStateAnnotation } from "../lib/agent-state";
 
 // ============================================================================
 // STATIC PROMPT
@@ -51,7 +52,7 @@ const model = new ChatOpenAI({
 });
 
 // TODO: Import tools from ./2-agent-tools and add to the array. Start with transferTool.
-// Example: import { transferTool } from "./2-agent-tools"; const tools = [transferTool];
+// Example: import { transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool } from "./2-agent-tools"; const tools = [transferTool, swapTool, ...];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tools: any[] = [];
 const modelWithTools = model.bindTools(tools);
@@ -63,25 +64,23 @@ const modelWithTools = model.bindTools(tools);
 const toolNode = new ToolNode(tools);
 const checkpointer = new MemorySaver();
 
-const agentRuntime = new StateGraph(MessagesAnnotation)
+const agent = new StateGraph(AgentStateAnnotation)
   .addNode(
     "llm",
     // TODO: Implement LLM node — invoke modelWithTools with system prompt + state.messages, return { messages: [response] }
     // Hint: const response = await modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]);
     //       return { messages: [response] };
-    async (state: { messages: BaseMessage[] }) => {
+    async (state: typeof AgentStateAnnotation.State) => {
       throw new Error("TODO: Implement LLM invoke — call modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]) and return { messages: [response] }");
     }
   )
-  // Tools Node
   .addNode("tools", toolNode)
-  // LLM Node's Conditional Edges
   // TODO: Implement routing — return "tools" when the last message has tool_calls, else END
   // Hint: const last = state.messages[state.messages.length - 1];
   //       return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
   .addConditionalEdges(
     "llm",
-    (state: { messages: BaseMessage[] }) => {
+    (state: typeof AgentStateAnnotation.State) => {
       return END; // TODO: replace with proper routing logic above
     },
     ["tools", END]
@@ -90,5 +89,4 @@ const agentRuntime = new StateGraph(MessagesAnnotation)
   .addEdge("tools", "llm")
   .compile({ checkpointer });
 
-export { agentRuntime, agentRuntime as agent, STATIC_SYSTEM_PROMPT, model, tools };
-
+export { agent, agent as agentRuntime, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, model, tools };

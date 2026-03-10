@@ -18,7 +18,7 @@ import express from "express";
 import { paymentMiddleware } from "x402-express";
 import { HumanMessage } from "@langchain/core/messages";
 import { agent } from "./1-agent-runtime";
-import { createTransferDelegation, getDelegationContextUserToAgent1 } from "./delegation";
+import { createTransferDelegation, getDelegationContextUserToAgent1 } from "../lib/delegation";
 
 // ============================================================================
 // PORT
@@ -143,8 +143,8 @@ app.get(AGENT_URI_PATH, (_req, res) => {
 
 // Chat endpoint
 app.post("/free-service", async (req, res) => {
-  console.log("💬 POST /free-service", req.body);
   const { message } = req.body;
+  console.log("💬 POST /free-service: ", message);
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) required" });
   }
@@ -173,8 +173,8 @@ app.post("/free-service", async (req, res) => {
 
 // x402 payable endpoint (same as /chat, requires payment)
 app.post("/paid-service", async (req, res) => {
-  console.log("💰 POST /paid-service", req.body);
   const { message } = req.body;
+  console.log("💰 POST /paid-service: ", message);
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) required" });
   }
@@ -185,10 +185,8 @@ app.post("/paid-service", async (req, res) => {
     const recipient = process.env.TARGET_ADDRESS!;
     const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
 
-    const transferMessage = `Transfer ${amount} ETH to ${recipient} ${when}`;
-
     const result = await agent.invoke(
-      { messages: [new HumanMessage(transferMessage)] },
+      { messages: [new HumanMessage(message)] },
       { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
     );
     const lastMsg = result.messages[result.messages.length - 1];

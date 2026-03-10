@@ -41,12 +41,12 @@ The agent runs at `http://localhost:3000`.
 
 | File | Description |
 |------|-------------|
-| `0-create-smart-accounts` | Create smart accounts (run first, add addresses to `.env`) |
+| `lib/create-smart-accounts` | Create smart accounts (run first, add addresses to `.env`) |
 | `1-agent-runtime` | LangGraph workflow (agent, model, tools) |
 | `2-agent-tools` | Delegation tools (transfer, swap, staking, yield farming, lending) |
 | `3-agent-services` | Express server: /free-service, /paid-service, agent card, agent-uri, x402 |
 | `4-agent-registration` | Scripts to register agent on-chain |
-| `4-call-agent-services` | CLI to call agent endpoints (agent-card, free, paid, mcp, a2a) |
+| `lib/call-agent-services` | CLI to call agent endpoints (agent-card, free, paid, mcp, a2a) |
 
 Run: `pnpm run workshop test` | `pnpm run workshop launch` | `pnpm run workshop register` | `pnpm run call-services [cmd]`
 

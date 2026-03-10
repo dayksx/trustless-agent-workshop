@@ -32,7 +32,7 @@ import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
 import { lendingTool, stakingTool, swapTool, transferTool, yieldFarmingTool } from "./2-agent-tools";
-import { AgentStateAnnotation } from "./agent-state";
+import { AgentStateAnnotation } from "../lib/agent-state";
 
 // ============================================================================
 // STATIC PROMPT

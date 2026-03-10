@@ -28,12 +28,12 @@ import {  startServer } from "./3-agent-services";
 // ÉTAPE 4: Registration (4-agent-registration.ts)
 // ============================================================================
 import { registerAgent } from "./4-agent-registration";
-import { createSmartAccounts } from "./0-create-smart-accounts";
+import { createSmartAccounts } from "../lib/create-smart-accounts";
 import {
   createTransferDelegation,
   getDelegationContextUserToAgent1,
-} from "./delegation";
-import { getBalances } from "./balance-service";
+} from "../lib/delegation";
+import { getBalances } from "../lib/balance-service";
 
 // ============================================================================
 // RUN
