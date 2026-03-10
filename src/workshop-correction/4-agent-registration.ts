@@ -60,7 +60,7 @@ export async function registerAgent(): Promise<void> {
   const agent0 = new Agent0({
     chainId: baseSepolia.id as number, // Ethereum Sepolia testnet
     rpcUrl: baseSepolia.rpcUrls.default.http[0],
-    privateKey: process.env.DELEGATOR_PRIVATE_KEY, // Optional: private key for signing transactions
+    privateKey: process.env.AGENT1_PRIVATE_KEY, // Optional: private key for signing transactions
   });
 
   const agent = agent0.createAgent(

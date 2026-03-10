@@ -21,9 +21,9 @@ This workshop helps trainees understand how to build an AI agent that:
 ```bash
 pnpm install
 cp .env.example .env
-# Edit .env with LLM_API_KEY, DELEGATOR_PRIVATE_KEY, DELEGATE_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
+# Edit .env with LLM_API_KEY, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
 
-pnpm run workshop create   # Creates smart accounts, prints DELEGATOR_SA_ADDRESS and DELEGATE_SA_ADDRESS
+pnpm run workshop create   # Creates smart accounts, prints AGENT1_SA_ADDRESS and AGENT2_SA_ADDRESS
 # Add the printed addresses to your .env
 ```
 

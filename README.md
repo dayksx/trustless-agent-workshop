@@ -1,4 +1,4 @@
-# Trustless Agent Workshop
+# Trustless Agent Workshop 🤖
 
 Build AI agents that act on behalf of users without holding their private keys. This workshop demonstrates fine-grain agent runtime and tooling development, least-privilege delegation with transparent authority boundaries, and agent-to-agent coordination with internet-native payment.
 
@@ -10,7 +10,7 @@ Build AI agents that act on behalf of users without holding their private keys. 
 - **MetaMask Smart Accounts Kit** — ERC-7710 delegation
 - **Agent0** — ERC-8004 identity registration
 
-By the end, you will know how to develop from scratch an agent that can reason, act on-chain via delegated authority, and monetize access securely.
+By the end, you will know how to develop from scratch an agent that can reason, act on-chain via delegated authority, and monetize access securely. ✨
 
 ---
 
@@ -23,12 +23,28 @@ By the end, you will know how to develop from scratch an agent that can reason, 
 
 ---
 
+## Prerequisites
+
+Before starting, ensure you have:
+
+| Requirement | Details |
+|-------------|---------|
+| **Node.js** | v18+ (LTS recommended) |
+| **pnpm** | v10+ (project uses `pnpm` as package manager) |
+| **LLM API key** | From [Anthropic](https://console.anthropic.com/), [OpenAI](https://platform.openai.com/), [Groq](https://console.groq.com/), or compatible provider |
+| **Two Ethereum wallets** | Two EOA private keys (delegator + delegatee) — you can create test wallets via MetaMask or similar |
+| **Pimlico account** | [Pimlico](https://dashboard.pimlico.io/) bundler URL for Base Sepolia |
+| **Testnet funds** | Base Sepolia ETH for delegator (transfers); optional: USDC for paid-service testing |
+| **Basic TypeScript** | Familiarity with async/await, imports, and basic object manipulation |
+
+---
+
 ## Quick Start
 
 ```bash
 pnpm install
 cp .env.example .env
-# Edit .env with LLM_API_KEY, DELEGATOR_PRIVATE_KEY, DELEGATE_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
+# Edit .env with LLM_API_KEY, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
 
 pnpm run workshop create   # Creates smart accounts — add printed addresses to .env
 pnpm run workshop test     # Test your agent
@@ -56,8 +72,8 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 2. **Edit `.env`** with:
    - `LLM_API_KEY` — [Anthropic](https://console.anthropic.com/), [OpenAI](https://platform.openai.com/), [Groq](https://console.groq.com/), etc.
-   - `DELEGATOR_PRIVATE_KEY` — delegator EOA (0x...)
-   - `DELEGATE_PRIVATE_KEY` — delegatee EOA (0x...)
+   - `AGENT1_PRIVATE_KEY` — delegator EOA (0x...)
+   - `AGENT2_PRIVATE_KEY` — delegatee EOA (0x...)
    - `BUNDLER_BASE_SEPOLIA_URL` — [Pimlico](https://dashboard.pimlico.io/) (Base Sepolia)
 
 3. **Create smart accounts:**
@@ -67,8 +83,8 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 4. **Add printed addresses to `.env`:**
    ```
-   DELEGATOR_SA_ADDRESS=0x...
-   DELEGATE_SA_ADDRESS=0x...
+   AGENT1_SA_ADDRESS=0x...
+   AGENT2_SA_ADDRESS=0x...
    ```
 
 5. **Verify:** `pnpm run workshop test` — will throw "TODO: Implement LLM invoke" until Step 1 is done.
@@ -210,7 +226,7 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
    ```bash
    pnpm run workshop register
    ```
-   Requires `DELEGATOR_PRIVATE_KEY` with Sepolia ETH for gas.
+   Requires `AGENT1_PRIVATE_KEY` with Sepolia ETH for gas.
 
 3. **Verify:** Fetch `http://localhost:3000/.well-known/agent-uri.json` (with server running) to see your metadata.
 
@@ -247,11 +263,11 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 | Variable | When | Description |
 |---------|------|-------------|
-| `DELEGATOR_PRIVATE_KEY` | Before create | Delegator EOA private key |
-| `DELEGATE_PRIVATE_KEY` | Before create | Delegatee EOA private key |
+| `AGENT1_PRIVATE_KEY` | Before create | Delegator EOA private key |
+| `AGENT2_PRIVATE_KEY` | Before create | Delegatee EOA private key |
 | `BUNDLER_BASE_SEPOLIA_URL` | Before create | Pimlico bundler URL |
-| `DELEGATOR_SA_ADDRESS` | After create | Printed by `workshop create` |
-| `DELEGATE_SA_ADDRESS` | After create | Printed by `workshop create` |
+| `AGENT1_SA_ADDRESS` | After create | Printed by `workshop create` |
+| `AGENT2_SA_ADDRESS` | After create | Printed by `workshop create` |
 | `LLM_API_KEY` | For test/launch | Your LLM provider API key |
 | `EVM_PRIVATE_KEY` | For paid-service | EOA with USDC on Base Sepolia |
 

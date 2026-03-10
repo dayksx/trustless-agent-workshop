@@ -10,7 +10,7 @@ x402 is an open, HTTP-native payment protocol that revives the [HTTP 402 Payment
 - **Pay-per-use APIs** (e.g. $0.01 per request)
 - **Machine-to-machine payments** (AI agents paying for services)
 
-Payments are settled on-chain (e.g. USDC on Base Sepolia) and verified via a facilitator service.
+Payments are settled on-chain (e.g. USDC on Base Sepolia) via **ERC-3009** (gasless transfer-with-authorization). The client signs an off-chain authorization; a **facilitator** executes the on-chain transfer and pays gas.
 
 ---
 
@@ -29,15 +29,17 @@ Payments are settled on-chain (e.g. USDC on Base Sepolia) and verified via a fac
      │     + payment requirements   │                                │
      │ ◄───────────────────────────│                                │
      │                              │                                │
-     │  3. Create payment on-chain  │                                │
-     │     (USDC transfer)          │                                │
-     │ ─────────────────────────────────────────────────────────────►│
+     │  3. Sign ERC-3009 auth        │                                │
+     │     (EIP-712, off-chain,     │                                │
+     │      no gas, client only)   │                                │
      │                              │                                │
      │  4. Retry request with       │                                │
      │     X-PAYMENT header         │                                │
      │ ───────────────────────────►│                                │
      │                              │  5. Verify + settle             │
-     │                              │ ─────────────────────────────►│
+     │                              │     (facilitator executes       │
+     │                              │ ──► transferWithAuthorization   │
+     │                              │     on-chain, pays gas) ──────►│
      │                              │ ◄─────────────────────────────│
      │  6. 200 OK + resource        │                                │
      │ ◄───────────────────────────│                                │
@@ -46,9 +48,9 @@ Payments are settled on-chain (e.g. USDC on Base Sepolia) and verified via a fac
 
 1. **Client** sends a normal HTTP request (GET or POST).
 2. **Server** responds with **HTTP 402** and payment requirements in the response body.
-3. **Client** creates a payment on-chain (e.g. USDC transfer to `payTo`).
+3. **Client** signs an **ERC-3009** authorization (EIP-712 typed data). This is off-chain only—no transaction, no gas. The client does **not** submit any on-chain tx.
 4. **Client** retries the same request with the **X-PAYMENT** header (base64-encoded signed payload).
-5. **Server** verifies the payment via the facilitator and settles.
+5. **Server** forwards the payload to the **facilitator**. The facilitator **verifies** the signature, then **executes** the USDC transfer on-chain via `transferWithAuthorization`. The facilitator pays gas; USDC flows directly from client to seller (facilitator never holds funds).
 6. **Server** returns **200 OK** with the resource.
 
 ---
@@ -113,7 +115,7 @@ You have two main options: **automatic** (recommended) or **manual**.
 
 ### Option A: Automatic – Use x402-axios or @x402/fetch
 
-The x402 client packages handle the 402 flow for you: they detect 402, create the payment, sign it, and retry with the correct header.
+The x402 client packages handle the 402 flow for you: they detect 402, sign the ERC-3009 authorization, and retry with the correct header.
 
 **Workshop CLI (x402-axios):** This project already uses `x402-axios` for the `paid` command:
 
@@ -189,6 +191,7 @@ console.log(data);
 
 - `EVM_PRIVATE_KEY` for an EOA that holds USDC on Base Sepolia
 - USDC on Base Sepolia (e.g. from [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet))
+- No native token (ETH) needed for gas—the facilitator sponsors gas via ERC-3009
 
 ---
 
@@ -210,11 +213,11 @@ curl -i -X POST http://localhost:3000/paid-service \
 - Body: JSON with `accepts` array
 - Pick one `accept` (e.g. `scheme: "exact"`, `network: "base-sepolia"`)
 
-**Step 3: Create payment on-chain**
+**Step 3: Sign the ERC-3009 authorization**
 
-- Send USDC from your wallet to `payTo` for the required amount
-- Use the `asset` contract address (USDC)
-- Amount: `maxAmountRequired` in token decimals (USDC = 6)
+- Build an EIP-712 typed data message for `transferWithAuthorization` (from your address, to `payTo`, value `maxAmountRequired`, validAfter/validBefore, random nonce)
+- Sign it with your wallet—**no transaction is submitted, no gas is paid**
+- The facilitator will later execute this authorization on-chain
 
 **Step 4: Build the X-PAYMENT payload**
 
@@ -222,8 +225,8 @@ The `X-PAYMENT` header must be a **base64-encoded JSON** object. The exact schem
 
 - `x402Version`
 - `scheme`, `network`
-- `payload`: transaction hash and related data
-- Signature over the payment authorization
+- `payload`: the signed authorization (signature + authorization params)
+- The facilitator uses this to call `transferWithAuthorization` on the USDC contract
 
 Implementing this manually is complex; use the x402 client SDKs instead.
 
@@ -262,7 +265,14 @@ app.use(
 
 ## Facilitator
 
-The server verifies and settles payments via an x402 **facilitator**:
+The server verifies and settles payments via an x402 **facilitator**. The facilitator:
+
+- **Verifies** the client's signed ERC-3009 payload (signature, balance, validity)
+- **Executes** the on-chain transfer by calling `transferWithAuthorization` on the USDC contract
+- **Pays gas** for the transaction—the client never pays gas
+- **Never holds funds**—USDC flows directly from client wallet to seller's `payTo` address
+
+Available facilitators:
 
 - **CDP (production):** `https://api.cdp.coinbase.com/platform/v2/x402` (requires API keys)
 - **x402.org (testnet):** `https://x402.org/facilitator` (Base Sepolia, no auth)
@@ -275,6 +285,7 @@ The `x402-express` middleware uses a default facilitator; you can override it in
 
 - [x402 Protocol](https://x402.org)
 - [Learn x402](https://learnx402.dev)
+- [EIP-3009: transferWithAuthorization](https://eips.ethereum.org/EIPS/eip-3009) — ERC used for gasless USDC transfers
 - [Coinbase CDP x402 Docs](https://docs.cdp.coinbase.com/x402/welcome)
 - [x402 GitBook](https://x402.gitbook.io/x402)
 - [x402 GitHub](https://github.com/coinbase/x402)

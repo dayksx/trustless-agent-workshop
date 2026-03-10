@@ -35,14 +35,14 @@ const publicClient = createPublicClient({
 });
 
 function getDelegatorAccount() {
-  const delegatorPrivateKey = process.env.DELEGATOR_PRIVATE_KEY as `0x${string}` | undefined;
-  if (!delegatorPrivateKey) throw new Error("Missing DELEGATOR_PRIVATE_KEY in environment");
+  const delegatorPrivateKey = process.env.AGENT1_PRIVATE_KEY as `0x${string}` | undefined;
+  if (!delegatorPrivateKey) throw new Error("Missing AGENT1_PRIVATE_KEY in environment");
   return privateKeyToAccount(delegatorPrivateKey);
 }
 
 function getDelegateAddress(): `0x${string}` {
-  const delegateAddress = process.env.DELEGATE_SA_ADDRESS as `0x${string}` | undefined;
-  if (!delegateAddress) throw new Error("Missing DELEGATE_SA_ADDRESS in environment");
+  const delegateAddress = process.env.AGENT2_SA_ADDRESS as `0x${string}` | undefined;
+  if (!delegateAddress) throw new Error("Missing AGENT2_SA_ADDRESS in environment");
   return delegateAddress;
 }
 

@@ -17,7 +17,7 @@ import { HumanMessage } from "@langchain/core/messages";
 // ============================================================================
 // ÉTAPE 1: Agent Runtime (1-agent-runtime.ts) & Tools (2-agent-tools.ts) with delegation
 // ============================================================================
-import { agentRuntime } from "./1-agent-runtime";
+import { agent } from "./1-agent-runtime";
 
 // ============================================================================
 // ÉTAPE 3: Services HTTP (3-agent-services.ts)
@@ -29,22 +29,33 @@ import {  startServer } from "./3-agent-services";
 // ============================================================================
 import { registerAgent } from "./4-agent-registration";
 import { createSmartAccounts } from "./0-create-smart-accounts";
+import {
+  createTransferDelegation,
+  getDelegationContextUserToAgent1,
+} from "./delegation";
 
 // ============================================================================
 // RUN
 // ============================================================================
 
-async function test() {
-  if (!process.env.LLM_API_KEY) {
-    throw new Error("Set LLM_API_KEY in .env");
+function requireEnv(keys: string[]) {
+  const missing = keys.filter((k) => !process.env[k]);
+  if (missing.length) {
+    throw new Error(`Missing in .env: ${missing.join(", ")}`);
   }
-  const r = await agentRuntime.invoke(
+}
+
+async function test() {
+  requireEnv(["LLM_API_KEY", "TARGET_ADDRESS", "USER_PRIVATE_KEY", "AGENT1_SA_ADDRESS"]);
+
+  const context = getDelegationContextUserToAgent1(); // User delegates to Agent1
+  const amount = "0.000042";
+  const recipient = process.env.TARGET_ADDRESS!;
+
+  const r = await agent.invoke(
     {
-      messages: [
-        new HumanMessage(
-          "Lend 0.000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
-        ),
-      ],
+      messages: [new HumanMessage(`Transfer ${amount} ETH to ${recipient} now`)],
+      signedDelegation: await createTransferDelegation(recipient, amount, null, context),
     },
     { configurable: { thread_id: "workshop-demo" } }
   );
@@ -65,7 +76,7 @@ Steps:
   launch   Start HTTP server (agent card, free/paid services)
   register On-chain agent registration (ERC-8004)
 
-Run 'create' first to get DELEGATOR_SA_ADDRESS and DELEGATE_SA_ADDRESS for .env
+Run 'create' first to get AGENT1_SA_ADDRESS and AGENT2_SA_ADDRESS for .env
 `);
 }
 

@@ -190,4 +190,10 @@ export const lendingTool = tool(
 );
 
 // Re-export delegation functions for consumers that import from 2-agent-tools
-export { createTransferDelegation, createSwapDelegation } from "./delegation";
+export {
+  createTransferDelegation,
+  createSwapDelegation,
+  type DelegationContext,
+  getDelegationContextAgent1ToAgent2,
+  getDelegationContextUserToAgent1,
+} from "./delegation";

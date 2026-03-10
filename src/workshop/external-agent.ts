@@ -7,7 +7,7 @@
  * instead of delegating to an external swap agent, this directly redeems the
  * signed delegation on-chain.
  *
- * Requires: DELEGATE_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
+ * Requires: AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
  */
 
 import "dotenv/config";
@@ -90,10 +90,10 @@ async function redeemDelegationOnChain(opts: {
 }): Promise<any> {
   const { agentId, signedDelegation, execution, successMessage, amountForError } = opts;
   const env = process.env;
-  const delegatePrivateKey = env.DELEGATE_PRIVATE_KEY as `0x${string}` | undefined;
+  const delegatePrivateKey = env.AGENT2_PRIVATE_KEY as `0x${string}` | undefined;
   const bundlerBaseSepoliaUrl = env.BUNDLER_BASE_SEPOLIA_URL as string | undefined;
 
-  if (!delegatePrivateKey || !bundlerBaseSepoliaUrl) throw new Error("Missing DELEGATE_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL in environment");
+  if (!delegatePrivateKey || !bundlerBaseSepoliaUrl) throw new Error("Missing AGENT2_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL in environment");
   if (!signedDelegation) throw new Error("Delegation missing signedDelegation");
 
   try {
@@ -198,9 +198,9 @@ async function redeemDelegationOnChain(opts: {
             console.error(
               `  Balance is sufficient. 0xb5863604 is likely InvalidDelegate:\n` +
                 `  - The delegate in the delegation must match the redeemer (msg.sender).\n` +
-                `  - Ensure DELEGATE_PRIVATE_KEY is set when creating delegations (2-agent-tools)\n` +
-                `    so the delegator uses the correct DeleGator address, not DELEGATE_EOA_ADDRESS (EOA).\n` +
-                `  - Or: DELEGATE_SA_ADDRESS must be the DeleGator address, not the EOA.\n`
+                `  - Ensure AGENT2_PRIVATE_KEY is set when creating delegations (2-agent-tools)\n` +
+                `    so the delegator uses the correct DeleGator address, not AGENT2_EOA_ADDRESS (EOA).\n` +
+                `  - Or: AGENT2_SA_ADDRESS must be the DeleGator address, not the EOA.\n`
             );
           } else {
             console.error(

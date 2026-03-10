@@ -37,8 +37,8 @@
 
 3. **Edit `.env`** and fill in at minimum:
    - `LLM_API_KEY` — your LLM provider API key
-   - `DELEGATOR_PRIVATE_KEY` — delegator EOA private key (0x...)
-   - `DELEGATE_PRIVATE_KEY` — delegatee EOA private key (0x...)
+   - `AGENT1_PRIVATE_KEY` — delegator EOA private key (0x...)
+   - `AGENT2_PRIVATE_KEY` — delegatee EOA private key (0x...)
    - `BUNDLER_BASE_SEPOLIA_URL` — Pimlico bundler URL (e.g. `https://api.pimlico.io/v2/base-sepolia/rpc?apikey=YOUR_KEY`)
 
 4. **Create smart accounts:**
@@ -47,10 +47,10 @@
    ```
 
 5. **Copy the printed addresses** into your `.env`:
-   - `DELEGATOR_SA_ADDRESS=0x...`
-   - `DELEGATE_SA_ADDRESS=0x...`
+   - `AGENT1_SA_ADDRESS=0x...`
+   - `AGENT2_SA_ADDRESS=0x...`
 
-6. **Verify:** Run `pnpm run workshop test`. If it runs without "Missing DELEGATE_SA_ADDRESS" (or similar), setup is complete.
+6. **Verify:** Run `pnpm run workshop test`. If it runs without "Missing AGENT2_SA_ADDRESS" (or similar), setup is complete.
 
 ---
 

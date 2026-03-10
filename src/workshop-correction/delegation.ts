@@ -9,12 +9,47 @@ import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { createPublicClient, http, parseEther } from "viem";
 import { baseSepolia } from "viem/chains";
+import type { Account } from "viem/accounts";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   createDelegation,
   Implementation,
   toMetaMaskSmartAccount,
 } from "@metamask/smart-accounts-kit";
+
+// ============================================================================
+// Delegation context (delegator + delegate)
+// ============================================================================
+
+/** Pass any delegator Account and delegate address. Use for custom delegator/delegate pairs. */
+export interface DelegationContext {
+  delegatorAccount: Account;
+  delegateAddress: `0x${string}`;
+}
+
+/** Agent1 delegates to Agent2. Requires AGENT1_PRIVATE_KEY, AGENT2_SA_ADDRESS. */
+export function getDelegationContextAgent1ToAgent2(): DelegationContext {
+  const delegatorPrivateKey = process.env.AGENT1_PRIVATE_KEY as `0x${string}` | undefined;
+  if (!delegatorPrivateKey) throw new Error("Missing AGENT1_PRIVATE_KEY in environment");
+  const delegateAddress = process.env.AGENT2_SA_ADDRESS as `0x${string}` | undefined;
+  if (!delegateAddress) throw new Error("Missing AGENT2_SA_ADDRESS in environment");
+  return {
+    delegatorAccount: privateKeyToAccount(delegatorPrivateKey),
+    delegateAddress,
+  };
+}
+
+/** User delegates to Agent1. Requires USER_PRIVATE_KEY, AGENT1_SA_ADDRESS. */
+export function getDelegationContextUserToAgent1(): DelegationContext {
+  const userKey = process.env.USER_PRIVATE_KEY as `0x${string}` | undefined;
+  const agent1Sa = process.env.AGENT1_SA_ADDRESS as `0x${string}` | undefined;
+  if (!userKey) throw new Error("Missing USER_PRIVATE_KEY in environment");
+  if (!agent1Sa) throw new Error("Missing AGENT1_SA_ADDRESS in environment");
+  return {
+    delegatorAccount: privateKeyToAccount(userKey),
+    delegateAddress: agent1Sa,
+  };
+}
 
 // ============================================================================
 // Constants (Base Sepolia)
@@ -34,18 +69,6 @@ const publicClient = createPublicClient({
   transport: http(),
 });
 
-function getDelegatorAccount() {
-  const delegatorPrivateKey = process.env.DELEGATOR_PRIVATE_KEY as `0x${string}` | undefined;
-  if (!delegatorPrivateKey) throw new Error("Missing DELEGATOR_PRIVATE_KEY in environment");
-  return privateKeyToAccount(delegatorPrivateKey);
-}
-
-function getDelegateAddress(): `0x${string}` {
-  const delegateAddress = process.env.DELEGATE_SA_ADDRESS as `0x${string}` | undefined;
-  if (!delegateAddress) throw new Error("Missing DELEGATE_SA_ADDRESS in environment");
-  return delegateAddress;
-}
-
 // ============================================================================
 // Delegation creation functions
 // ============================================================================
@@ -53,10 +76,10 @@ function getDelegateAddress(): `0x${string}` {
 export async function createTransferDelegation(
   recipient: string,
   amount: string,
-  when?: string | null
+  when?: string | null,
+  context?: DelegationContext,
 ): Promise<unknown> {
-  const delegatorAccount = getDelegatorAccount();
-  const delegateAddress = getDelegateAddress();
+  const { delegatorAccount, delegateAddress } = context ?? getDelegationContextAgent1ToAgent2();
 
   const delegatorSmartAccount = await toMetaMaskSmartAccount({
     client: publicClient as any,
@@ -75,6 +98,12 @@ export async function createTransferDelegation(
       type: "nativeTokenTransferAmount",
       maxAmount: parseEther(amount),
     },
+    caveats: [
+      {
+        type: "allowedTargets",
+        targets: [recipient as `0x${string}`]
+      }
+    ],
     salt,
   });
 
@@ -94,10 +123,10 @@ export async function createSwapDelegation(
   tokenIn: string,
   tokenOut: string,
   amountIn: string,
-  when?: string | null
+  when?: string | null,
+  context?: DelegationContext,
 ): Promise<unknown> {
-  const delegatorAccount = getDelegatorAccount();
-  const delegateAddress = getDelegateAddress();
+  const { delegatorAccount, delegateAddress } = context ?? getDelegationContextAgent1ToAgent2();
 
   const delegatorSmartAccount = await toMetaMaskSmartAccount({
     client: publicClient as any,

@@ -65,7 +65,7 @@ Steps:
   launch   Start HTTP server (agent card, free/paid services)
   register On-chain agent registration (ERC-8004)
 
-Run 'create' first to get DELEGATOR_SA_ADDRESS and DELEGATE_SA_ADDRESS for .env
+Run 'create' first to get AGENT1_SA_ADDRESS and AGENT2_SA_ADDRESS for .env
 `);
 }
 

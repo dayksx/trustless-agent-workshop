@@ -28,10 +28,11 @@ import "dotenv/config";
 // import { ChatFireworks } from "@langchain/community";    // FIREWORKS_API_KEY     → accounts/fireworks/models/llama-v3p1-70b
 // import { ChatOpenRouter } from "@langchain/community";   // OPENROUTER_API_KEY    → anthropic/claude-3.5-sonnet, openai/gpt-4o
 import { ChatOpenAI } from "@langchain/openai";
-import { StateGraph, MessagesAnnotation, START, END, MemorySaver } from "@langchain/langgraph";
+import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
 import { lendingTool, stakingTool, swapTool, transferTool, yieldFarmingTool } from "./2-agent-tools";
+import { AgentStateAnnotation } from "./agent-state";
 
 // ============================================================================
 // STATIC PROMPT
@@ -59,11 +60,11 @@ const modelWithTools = model.bindTools(tools);
 const toolNode = new ToolNode(tools);
 const checkpointer = new MemorySaver();
 
-const agentRuntime = new StateGraph(MessagesAnnotation)
+const agent = new StateGraph(AgentStateAnnotation)
   .addNode(
     "llm",
     // LLM Node
-    async (state: { messages: BaseMessage[] }) => {
+    async (state: typeof AgentStateAnnotation.State) => {
       const response = await modelWithTools.invoke([
         new SystemMessage(STATIC_SYSTEM_PROMPT),
         ...state.messages,
@@ -76,7 +77,7 @@ const agentRuntime = new StateGraph(MessagesAnnotation)
   // LLM Node's Conditional Edges
   .addConditionalEdges(
     "llm",
-    (state: { messages: BaseMessage[] }) => {
+    (state: typeof AgentStateAnnotation.State) => {
       const last = state.messages[state.messages.length - 1];
       return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
     },
@@ -86,5 +87,5 @@ const agentRuntime = new StateGraph(MessagesAnnotation)
   .addEdge("tools", "llm")
   .compile({ checkpointer });
 
-export { agentRuntime, agentRuntime as agent, STATIC_SYSTEM_PROMPT, model, tools };
+export { agent, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, model, tools };
 

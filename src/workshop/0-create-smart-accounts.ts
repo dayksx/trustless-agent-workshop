@@ -2,11 +2,11 @@
 /**
  * Workshop Step 0: Create Smart Accounts
  *
- * Creates MetaMask Hybrid smart accounts for DELEGATOR_EOA_ADDRESS and
- * DELEGATE_EOA_ADDRESS. Computes deterministic addresses and deploys them
+ * Creates MetaMask Hybrid smart accounts for AGENT1_EOA_ADDRESS and
+ * AGENT2_EOA_ADDRESS. Computes deterministic addresses and deploys them
  * on Base Sepolia if not already deployed.
  *
- * Requires: DELEGATOR_PRIVATE_KEY, DELEGATE_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
+ * Requires: AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
  *
  * Usage: pnpm exec tsx src/workshop-empty/0-create-smart-accounts.ts
  */
@@ -23,12 +23,12 @@ import { Implementation, toMetaMaskSmartAccount } from "@metamask/smart-accounts
 // ============================================================================
 
 const bundlerUrl = process.env.BUNDLER_BASE_SEPOLIA_URL;
-const delegatorPrivateKey = process.env.DELEGATOR_PRIVATE_KEY as `0x${string}` | undefined;
-const delegatePrivateKey = process.env.DELEGATE_PRIVATE_KEY as `0x${string}` | undefined;
+const delegatorPrivateKey = process.env.AGENT1_PRIVATE_KEY as `0x${string}` | undefined;
+const delegatePrivateKey = process.env.AGENT2_PRIVATE_KEY as `0x${string}` | undefined;
 
 if (!bundlerUrl || !delegatorPrivateKey || !delegatePrivateKey) {
   console.error(
-    "Missing required env: BUNDLER_BASE_SEPOLIA_URL, DELEGATOR_PRIVATE_KEY, DELEGATE_PRIVATE_KEY"
+    "Missing required env: BUNDLER_BASE_SEPOLIA_URL, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY"
   );
   process.exit(1);
 }
@@ -102,7 +102,7 @@ export async function createSmartAccounts() {
   ]);
 
   console.log("\n--- Add these to your .env ---\n");
-  console.log(`DELEGATOR_SA_ADDRESS=${delegator.address}`);
-  console.log(`DELEGATE_SA_ADDRESS=${delegate.address}`);
+  console.log(`AGENT1_SA_ADDRESS=${delegator.address}`);
+  console.log(`AGENT2_SA_ADDRESS=${delegate.address}`);
   console.log("");
 }

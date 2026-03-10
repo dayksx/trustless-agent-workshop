@@ -83,7 +83,7 @@ UserOperation reverted during simulation with reason: 0xb5863604
 
 | Cause | Description | Solution |
 |-------|-------------|----------|
-| **InvalidDelegate** | Le `delegate` dans la délégation ne correspond pas à `msg.sender` (le redeemer). | `DELEGATE_SA_ADDRESS` doit être l'adresse du DeleGator (smart account), pas l'EOA. Ou définir `DELEGATE_PRIVATE_KEY` pour que le delegator utilise automatiquement la bonne adresse. |
+| **InvalidDelegate** | Le `delegate` dans la délégation ne correspond pas à `msg.sender` (le redeemer). | `AGENT2_SA_ADDRESS` doit être l'adresse du DeleGator (smart account), pas l'EOA. Ou définir `AGENT2_PRIVATE_KEY` pour que le delegator utilise automatiquement la bonne adresse. |
 | **CannotUseADisabledDelegation** | La délégation a été désactivée via `disableDelegation`. | Créer une nouvelle délégation ou appeler `enableDelegation`. |
 | **Solde insuffisant** | Le delegator n'a pas assez d'ETH pour le transfert. | Financer le delegator sur Base Sepolia. |
 | **Caveat enforcer** | Un caveat (ex. `nativeTokenTransferAmount`) a échoué. | Vérifier les termes et le montant. |
@@ -99,13 +99,13 @@ UserOperation reverted during simulation with reason: 0xb5863604
 | Cause | Solution |
 |-------|----------|
 | **Paymaster rejection** | Set `USE_PAYMASTER=false` or omit it. Fund the delegate smart account with ETH for gas. |
-| **Delegator balance** | The delegator (DELEGATOR_SA_ADDRESS) must have enough ETH for the transfer. |
-| **Delegate ≠ redeemer** | DELEGATE_SA_ADDRESS must match the smart account from DELEGATE_PRIVATE_KEY. |
+| **Delegator balance** | The delegator (AGENT1_SA_ADDRESS) must have enough ETH for the transfer. |
+| **Delegate ≠ redeemer** | AGENT2_SA_ADDRESS must match the smart account from AGENT2_PRIVATE_KEY. |
 
 **Solutions :**
 
-- Définir `DELEGATE_PRIVATE_KEY` dans `.env` lors de la création des délégations : le script dérive automatiquement l'adresse DeleGator correcte.
-- Si vous utilisez uniquement `DELEGATE_SA_ADDRESS`, celle-ci doit être l'adresse du DeleGator (smart account), pas l'adresse EOA.
+- Définir `AGENT2_PRIVATE_KEY` dans `.env` lors de la création des délégations : le script dérive automatiquement l'adresse DeleGator correcte.
+- Si vous utilisez uniquement `AGENT2_SA_ADDRESS`, celle-ci doit être l'adresse du DeleGator (smart account), pas l'adresse EOA.
 - Vérifier le solde du delegator sur Base Sepolia.
 - Obtenir des ETH de test : [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet).
 
@@ -115,7 +115,7 @@ UserOperation reverted during simulation with reason: 0xb5863604
 
 | Erreur | Cause | Solution |
 |--------|-------|----------|
-| `Missing DELEGATE_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL` | Variables d'environnement manquantes | Définir `.env` avec les clés requises. |
+| `Missing AGENT2_PRIVATE_KEY or BUNDLER_BASE_SEPOLIA_URL` | Variables d'environnement manquantes | Définir `.env` avec les clés requises. |
 | `Delegation missing signedDelegation` | Objet de délégation incomplet | Inclure `signedDelegation` dans le payload. |
 | `Invalid chain` | Chaîne non supportée par le bundler | Utiliser Base Sepolia ou chaîne configurée. |
 
