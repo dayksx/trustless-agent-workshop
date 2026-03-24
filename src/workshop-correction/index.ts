@@ -81,7 +81,7 @@ Steps:
   register On-chain agent registration (ERC-8004)
   balances Show ETH + USD balances for USER_SA, AGENT1_SA, AGENT2_SA (Base Sepolia)
 
-Run 'create' first to get AGENT1_SA_ADDRESS and AGENT2_SA_ADDRESS for .env
+Run 'create' first to get AGENT1_SA_ADDRESS, AGENT2_SA_ADDRESS, and USER_SA_ADDRESS for .env
 `);
 }
 

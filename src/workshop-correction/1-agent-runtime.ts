@@ -3,7 +3,6 @@
  * Workshop: Build Agent Runtime
  *
  * LangGraph workflow:
- * - Static system prompt
  * - Model + tools (transfer from 2-agent-tools)
  * - Agent graph (llm → tools → llm)
  *
@@ -30,15 +29,9 @@ import "dotenv/config";
 import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
+import { AIMessage } from "@langchain/core/messages";
 import { lendingTool, stakingTool, swapTool, transferTool, yieldFarmingTool } from "./2-agent-tools";
 import { AgentStateAnnotation } from "../lib/agent-state";
-
-// ============================================================================
-// STATIC PROMPT
-// ============================================================================
-
-const STATIC_SYSTEM_PROMPT = `You are a transfer coordinator agent. Help users send native tokens (ETH) by delegating to an external A2A transfer agent.`;
 
 // ============================================================================
 // MODEL & TOOLS
@@ -65,10 +58,8 @@ const agent = new StateGraph(AgentStateAnnotation)
     "llm",
     async (state: typeof AgentStateAnnotation.State) => {
       console.log("🤖 LLM node invoked");
-      const response = await modelWithTools.invoke([
-        new SystemMessage(STATIC_SYSTEM_PROMPT),
-        ...state.messages,
-      ]);
+      const prompt = state.messages;
+      const response = await modelWithTools.invoke(prompt);
       return { messages: [response] };
     }
   )
@@ -86,5 +77,5 @@ const agent = new StateGraph(AgentStateAnnotation)
   .addEdge("tools", "llm")
   .compile({ checkpointer });
 
-export { agent, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, model, tools };
+export { agent, AgentStateAnnotation, model, tools };
 

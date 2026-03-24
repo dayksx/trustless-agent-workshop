@@ -32,9 +32,10 @@ Before starting, ensure you have:
 | **Node.js** | v18+ (LTS recommended) |
 | **pnpm** | v10+ (project uses `pnpm` as package manager) |
 | **LLM API key** | From [Anthropic](https://console.anthropic.com/), [OpenAI](https://platform.openai.com/), [Groq](https://console.groq.com/), or compatible provider |
-| **Two Ethereum wallets** | Two EOA private keys (delegator + delegatee) — you can create test wallets via MetaMask or similar |
+| **Ethereum wallets** | At least two EOA private keys (delegator + delegatee); a **third** EOA (`USER_PRIVATE_KEY`) is required for `pnpm run workshop test` (user→Agent 1 delegation) and `pnpm run call-services paid` (x402) |
 | **Pimlico account** | [Pimlico](https://dashboard.pimlico.io/) bundler URL for Base Sepolia |
 | **Testnet funds** | Base Sepolia ETH for delegator (transfers); optional: USDC for paid-service testing |
+| **`TARGET_ADDRESS`** | Checksummed `0x…` address — the **only** recipient allowed by the transfer delegation (`allowedTargets` caveat). Set it before `workshop test` and HTTP demos; user-signed delegations in this repo scope native ETH sends to this address |
 | **Basic TypeScript** | Familiarity with async/await, imports, and basic object manipulation |
 
 ---
@@ -44,7 +45,7 @@ Before starting, ensure you have:
 ```bash
 pnpm install
 cp .env.example .env
-# Edit .env with LLM_API_KEY, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
+# Edit .env with LLM_API_KEY, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, USER_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL, TARGET_ADDRESS
 
 pnpm run workshop create   # Creates smart accounts — add printed addresses to .env
 pnpm run workshop test     # Test your agent
@@ -74,7 +75,9 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
    - `LLM_API_KEY` — [Anthropic](https://console.anthropic.com/), [OpenAI](https://platform.openai.com/), [Groq](https://console.groq.com/), etc.
    - `AGENT1_PRIVATE_KEY` — delegator EOA (0x...)
    - `AGENT2_PRIVATE_KEY` — delegatee EOA (0x...)
+   - `USER_PRIVATE_KEY` — third EOA for the **user** role: signs ERC-7710 delegations to Agent 1 in `pnpm run workshop test`, and pays USDC on `/paid-service` when using `pnpm run call-services paid` (x402). Must be distinct from the agent keys unless you know what you are doing.
    - `BUNDLER_BASE_SEPOLIA_URL` — [Pimlico](https://dashboard.pimlico.io/) (Base Sepolia)
+   - `TARGET_ADDRESS` — recipient address for **transfer delegation** (ERC-7710 caveat `allowedTargets`): the delegate may send native ETH **only** to this address. Used by `pnpm run workshop test`, `/free-service`, and `/paid-service` when building `createTransferDelegation(..., recipient, ...)`. Use the same address in natural-language transfer requests (e.g. Step 4 verify example) or on-chain redemption will not match the delegation.
 
 3. **Create smart accounts:**
    ```bash
@@ -85,7 +88,12 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
    ```
    AGENT1_SA_ADDRESS=0x...
    AGENT2_SA_ADDRESS=0x...
+   USER_SA_ADDRESS=0x...
    ```
+
+   **`AGENT1_SA_ADDRESS` / `AGENT2_SA_ADDRESS`** — emitted by `pnpm run workshop create` (MetaMask Hybrid smart accounts for `AGENT1_PRIVATE_KEY` and `AGENT2_PRIVATE_KEY` on Base Sepolia).
+
+   **`USER_SA_ADDRESS`** — the MetaMask Hybrid **smart account** address for `USER_PRIVATE_KEY` (same counterfactual derivation as the agent SAs: `Implementation.Hybrid` with the same deploy params as in `src/lib/create-smart-accounts.ts`). `workshop create` does **not** print this line; add it yourself if you want a correct “User (SA)” row in `pnpm run workshop balances` or to fund that address with test ETH. You can obtain it by running the same `toMetaMaskSmartAccount` logic locally with `USER_PRIVATE_KEY`, or any tool that computes the Hybrid SA for that EOA on Base Sepolia. If omitted or invalid, `balances` still runs but shows the user row as not set.
 
 5. **Verify:** `pnpm run workshop test` — will throw "TODO: Implement LLM invoke" until Step 1 is done.
 
@@ -152,22 +160,23 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 **Goal:** Implement `createTransferDelegation` and `createSwapDelegation`. This is the core of the workshop.
 
-1. **Open** `src/workshop/delegation.ts`.
+1. **Open** `src/lib/delegation.ts`.
 
 2. **Implement `createTransferDelegation`:**
    - Get `delegatorAccount` (getDelegatorAccount()) and `delegateAddress` (getDelegateAddress())
    - Create smart account with `toMetaMaskSmartAccount` (Implementation.Hybrid)
-   - Create delegation with `createDelegation({ to, from, environment, scope, salt })`
+   - Create delegation with `createDelegation({ to, from, environment, scope, caveats, salt })`
      - `scope: { type: "nativeTokenTransferAmount", maxAmount: parseEther(amount) }`
+     - **Least privilege:** add caveat `allowedTargets` so transfers are permitted **only** to the intended recipient (same pattern as `src/lib/delegation.ts`). Production flows pass `process.env.TARGET_ADDRESS` as that recipient.
    - Sign with `delegatorSmartAccount.signDelegation({ delegation })`
    - Return `{ ...delegation, signature }`
-   - **Reference:** `src/workshop-correction/delegation.ts`
+   - **Reference:** `src/lib/delegation.ts` / `src/workshop-correction/` patterns
 
 3. **Implement `createSwapDelegation`:**
    - Same pattern, but `scope: { type: "functionCall", targets: [UNISWAP_SWAP_ROUTER_02], selectors: [...] }`
    - Selectors: `exactInputSingle`, `exactInput`, `exactOutputSingle`, `exactOutput` (see workshop-correction)
 
-4. **Verify:** `pnpm run workshop test` — send "Send 0.00042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337". The agent should execute the transfer (if delegator has ETH on Base Sepolia).
+4. **Verify:** Set `TARGET_ADDRESS` in `.env` to the recipient you will name in the prompt (must match the address in the signed delegation). `pnpm run workshop test` — e.g. send `Send 0.00042 ETH to 0x…` using the same `0x…` as `TARGET_ADDRESS`. The agent should execute the transfer (if delegator has ETH on Base Sepolia).
 
 ---
 
@@ -197,9 +206,9 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
    pnpm run workshop launch
    ```
 
-2. **Test free endpoint:**
+2. **Test free endpoint** (set `TARGET_ADDRESS` in `.env` to the recipient in your message — the server pre-signs a delegation for that address):
    ```bash
-   pnpm run call-services free --message "Send 0.00042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
+   pnpm run call-services free --message "Send 0.00042 ETH to 0xYourTargetAddress..."
    ```
    Or with curl:
    ```bash
@@ -208,7 +217,7 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
      -d '{"message": "Hello"}'
    ```
 
-3. **Test paid endpoint** (requires `EVM_PRIVATE_KEY` + USDC on Base Sepolia):
+3. **Test paid endpoint** (requires `USER_PRIVATE_KEY` + USDC on Base Sepolia):
    ```bash
    pnpm run call-services paid --message "Hello"
    ```
@@ -234,13 +243,14 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 ## Summary — What You Implement
 
-| File | What to implement |
+| File / config | What to implement |
 |------|-------------------|
+| `.env` | Set `TARGET_ADDRESS` — sole allowed recipient for native transfer delegations (`allowedTargets`) |
 | `1-agent-runtime.ts` | LLM node: invoke `modelWithTools.invoke([...])` and return `{ messages: [response] }` |
 | `1-agent-runtime.ts` | Conditional edge: route to `"tools"` when LLM returns tool calls |
 | `1-agent-runtime.ts` | Add tools: import `transferTool` from `./2-agent-tools` and add to `tools` array |
-| `delegation.ts` | `createTransferDelegation` — ERC-7710 delegation for native transfer |
-| `delegation.ts` | `createSwapDelegation` — ERC-7710 delegation for token swap |
+| `lib/delegation.ts` | `createTransferDelegation` — ERC-7710 delegation for native transfer (include `allowedTargets` for recipient) |
+| `lib/delegation.ts` | `createSwapDelegation` — ERC-7710 delegation for token swap |
 | `3-agent-services.ts` | x402 payment middleware for `/paid-service` ($0.01 USDC on base-sepolia) |
 | `3-agent-services.ts` | (Optional) Customize `agentUri.name` and `agentUri.description` |
 
@@ -251,6 +261,7 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 | Command | Description |
 |---------|-------------|
 | `pnpm run workshop create` | Create smart accounts (add addresses to .env) |
+| `pnpm run workshop balances` | Show ETH + USD for `USER_SA_ADDRESS`, `AGENT1_SA_ADDRESS`, `AGENT2_SA_ADDRESS` (Base Sepolia) |
 | `pnpm run workshop test` | Test agent (runtime + tools) |
 | `pnpm run workshop launch` | Start HTTP server at http://localhost:3000 |
 | `pnpm run workshop register` | On-chain agent registration (ERC-8004) |
@@ -268,8 +279,10 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 | `BUNDLER_BASE_SEPOLIA_URL` | Before create | Pimlico bundler URL |
 | `AGENT1_SA_ADDRESS` | After create | Printed by `workshop create` |
 | `AGENT2_SA_ADDRESS` | After create | Printed by `workshop create` |
+| `USER_PRIVATE_KEY` | Before test / paid CLI | User EOA: delegation to Agent 1 (`workshop test`); x402 signer for `call-services paid` |
+| `USER_SA_ADDRESS` | Optional | User’s Hybrid smart account address — for `pnpm run workshop balances` and funding; not printed by `workshop create` |
+| `TARGET_ADDRESS` | Before test / launch | Only allowed recipient for native ETH transfer delegations (`allowedTargets` caveat). Used when signing delegations in `workshop test` and in `/free-service` / `/paid-service` |
 | `LLM_API_KEY` | For test/launch | Your LLM provider API key |
-| `EVM_PRIVATE_KEY` | For paid-service | EOA with USDC on Base Sepolia |
 
 ---
 

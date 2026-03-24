@@ -55,7 +55,7 @@ const model = new ChatOpenAI({
 // Example: import { transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool } from "./2-agent-tools"; const tools = [transferTool, swapTool, ...];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tools: any[] = [];
-const modelWithTools = model.bindTools(tools);
+const modelWithoutTools = model.bindTools(tools);
 
 // ============================================================================
 // LANGGRAPH AGENT RUNTIME
@@ -67,11 +67,16 @@ const checkpointer = new MemorySaver();
 const agent = new StateGraph(AgentStateAnnotation)
   .addNode(
     "llm",
+    
     // TODO: Implement LLM node — invoke modelWithTools with system prompt + state.messages, return { messages: [response] }
     // Hint: const response = await modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]);
     //       return { messages: [response] };
     async (state: typeof AgentStateAnnotation.State) => {
-      throw new Error("TODO: Implement LLM invoke — call modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]) and return { messages: [response] }");
+      const prompt = state.messages;
+      console.log(" mon prompt: ", prompt);
+      const response = await modelWithoutTools.invoke(prompt)
+      console.log(" mon response: ", response);
+      return { messages: [response]}
     }
   )
   .addNode("tools", toolNode)
@@ -81,6 +86,7 @@ const agent = new StateGraph(AgentStateAnnotation)
   .addConditionalEdges(
     "llm",
     (state: typeof AgentStateAnnotation.State) => {
+
       return END; // TODO: replace with proper routing logic above
     },
     ["tools", END]

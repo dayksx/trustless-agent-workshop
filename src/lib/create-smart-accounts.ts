@@ -2,11 +2,12 @@
 /**
  * Create Smart Accounts
  *
- * Creates MetaMask Hybrid smart accounts for AGENT1_EOA_ADDRESS and
- * AGENT2_EOA_ADDRESS. Computes deterministic addresses and deploys them
- * on Base Sepolia if not already deployed.
+ * Creates MetaMask Hybrid smart accounts for AGENT1, AGENT2, and USER EOAs.
+ * Computes deterministic addresses and deploys them on Base Sepolia if not
+ * already deployed.
  *
- * Requires: AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, BUNDLER_BASE_SEPOLIA_URL
+ * Requires: AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, USER_PRIVATE_KEY,
+ * BUNDLER_BASE_SEPOLIA_URL
  *
  * Usage: pnpm run workshop create
  */
@@ -25,10 +26,11 @@ import { Implementation, toMetaMaskSmartAccount } from "@metamask/smart-accounts
 const bundlerUrl = process.env.BUNDLER_BASE_SEPOLIA_URL;
 const delegatorPrivateKey = process.env.AGENT1_PRIVATE_KEY as `0x${string}` | undefined;
 const delegatePrivateKey = process.env.AGENT2_PRIVATE_KEY as `0x${string}` | undefined;
+const userPrivateKey = process.env.USER_PRIVATE_KEY as `0x${string}` | undefined;
 
-if (!bundlerUrl || !delegatorPrivateKey || !delegatePrivateKey) {
+if (!bundlerUrl || !delegatorPrivateKey || !delegatePrivateKey || !userPrivateKey) {
   console.error(
-    "Missing required env: BUNDLER_BASE_SEPOLIA_URL, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY"
+    "Missing required env: BUNDLER_BASE_SEPOLIA_URL, AGENT1_PRIVATE_KEY, AGENT2_PRIVATE_KEY, USER_PRIVATE_KEY"
   );
   process.exit(1);
 }
@@ -92,15 +94,17 @@ async function getOrCreateSmartAccount(label: string, privateKey: `0x${string}`)
 // ============================================================================
 
 export async function createSmartAccounts() {
-  console.log("Creating smart accounts for DELEGATOR and DELEGATE EOAs...\n");
+  console.log("Creating smart accounts for DELEGATOR, DELEGATE, and USER EOAs...\n");
 
-  const [delegator, delegate] = await Promise.all([
+  const [delegator, delegate, user] = await Promise.all([
     getOrCreateSmartAccount("Delegator", delegatorPrivateKey!),
     getOrCreateSmartAccount("Delegate", delegatePrivateKey!),
+    getOrCreateSmartAccount("User", userPrivateKey!),
   ]);
 
   console.log("\n--- Add these to your .env ---\n");
   console.log(`AGENT1_SA_ADDRESS=${delegator.address}`);
   console.log(`AGENT2_SA_ADDRESS=${delegate.address}`);
+  console.log(`USER_SA_ADDRESS=${user.address}`);
   console.log("");
 }
