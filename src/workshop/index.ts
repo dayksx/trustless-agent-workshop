@@ -40,11 +40,10 @@ import { getBalances } from "../lib/balance-service";
 // ============================================================================
 
 async function balances() {
-  const { ethUsdPrice, balances } = await getBalances();
-  console.log("\n💰 Base Sepolia balances (ETH + USD)\n");
-  console.log(`ETH/USD: $${ethUsdPrice.toFixed(2)}\n`);
+  const { balances } = await getBalances();
+  console.log("\n💰 Base Sepolia balances (ETH + USDC)\n");
   for (const b of balances) {
-    console.log(`  ${b.label.padEnd(14)} ${b.address}  ${b.eth} ETH  $${b.usd} USD`);
+    console.log(`  ${b.label.padEnd(14)} ${b.address}  ${b.eth} ETH  ${b.usdc} USDC`);
   }
   console.log("");
 }
@@ -71,14 +70,14 @@ function printHelp() {
   console.log(`
 Workshop: Trustless Agent (LangGraph + ERC-7710)
 
-Usage: pnpm run workshop [step]
+Usage: pnpm run pnpm run workshop test workshop [step]
 
 Steps:
   create   Create smart accounts first (add printed addresses to .env)
   test     Test agent (runtime + tools)
   launch   Start HTTP server (agent card, free/paid services)
   register On-chain agent registration (ERC-8004)
-  balances Show ETH + USD balances for USER_SA, AGENT1_SA, AGENT2_SA (Base Sepolia)
+  balances Show ETH + USDC balances for USER_SA, AGENT1_SA, AGENT2_SA (Base Sepolia)
 
 Run 'create' first to get AGENT1_SA_ADDRESS, AGENT2_SA_ADDRESS, and USER_SA_ADDRESS for .env
 `);

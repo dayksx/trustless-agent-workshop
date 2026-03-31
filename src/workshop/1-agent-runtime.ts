@@ -33,6 +33,7 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
 // TODO: Import tools from ./2-agent-tools (transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool)
 import { AgentStateAnnotation } from "../lib/agent-state";
+import { transferTool } from "./2-agent-tools";
 
 // ============================================================================
 // STATIC PROMPT
@@ -67,16 +68,12 @@ const checkpointer = new MemorySaver();
 const agent = new StateGraph(AgentStateAnnotation)
   .addNode(
     "llm",
-    
     // TODO: Implement LLM node — invoke modelWithTools with system prompt + state.messages, return { messages: [response] }
-    // Hint: const response = await modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages]);
+    // Hint: const response = await modelWithTools.invoke([new SystemMessage(state.messages]);
     //       return { messages: [response] };
     async (state: typeof AgentStateAnnotation.State) => {
-      const prompt = state.messages;
-      console.log(" mon prompt: ", prompt);
-      const response = await modelWithoutTools.invoke(prompt)
-      console.log(" mon response: ", response);
-      return { messages: [response]}
+      // README (Step 0 verify / Step 1): replace this with model invoke — until then, `pnpm run workshop test` throws as documented.
+      throw new Error("TODO: Implement LLM invoke");
     }
   )
   .addNode("tools", toolNode)
@@ -87,7 +84,7 @@ const agent = new StateGraph(AgentStateAnnotation)
     "llm",
     (state: typeof AgentStateAnnotation.State) => {
 
-      return END; // TODO: replace with proper routing logic above
+      return END;
     },
     ["tools", END]
   )

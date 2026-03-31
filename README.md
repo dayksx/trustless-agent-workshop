@@ -152,31 +152,23 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 5. **Inspect** `src/workshop/2-agent-tools.ts` to see how `transferTool` and `swapTool` work — they call `createTransferDelegation` / `createSwapDelegation` then `callExternalAgent`.
 
-6. **Verify:** `pnpm run workshop test` — the agent should now have access to tools. You may see "TODO: Implement createTransferDelegation" when a transfer is attempted (expected until Step 4).
+6. **Verify:** `pnpm run workshop test` — the agent should now have access to tools. Until you wire every tool in `2-agent-tools.ts`, some skills may still return placeholder TODO messages (see Step 4).
 
 ---
 
-### Step 4: Implement ERC-7710 Delegation (delegation.ts)
+### Step 4: ERC-7710 Delegation — reference & extensions (delegation.ts)
 
-**Goal:** Implement `createTransferDelegation` and `createSwapDelegation`. This is the core of the workshop.
+**Goal:** Understand how signed delegations power the tools, then optionally implement or extend them yourself. The heavy lifting is already in the repo as a **reference**.
 
-1. **Open** `src/lib/delegation.ts`.
+1. **Read** `src/lib/delegation.ts`. **`createTransferDelegation`** is fully implemented: MetaMask smart account (`toMetaMaskSmartAccount`, `Implementation.Hybrid`), `createDelegation` with scope `nativeTokenTransferAmount`, caveat `allowedTargets` for least privilege, and `signDelegation`. Use it as the **canonical pattern** for any new delegation you add.
 
-2. **Implement `createTransferDelegation`:**
-   - Get `delegatorAccount` (getDelegatorAccount()) and `delegateAddress` (getDelegateAddress())
-   - Create smart account with `toMetaMaskSmartAccount` (Implementation.Hybrid)
-   - Create delegation with `createDelegation({ to, from, environment, scope, caveats, salt })`
-     - `scope: { type: "nativeTokenTransferAmount", maxAmount: parseEther(amount) }`
-     - **Least privilege:** add caveat `allowedTargets` so transfers are permitted **only** to the intended recipient (same pattern as `src/lib/delegation.ts`). Production flows pass `process.env.TARGET_ADDRESS` as that recipient.
-   - Sign with `delegatorSmartAccount.signDelegation({ delegation })`
-   - Return `{ ...delegation, signature }`
-   - **Reference:** `src/lib/delegation.ts` / `src/workshop-correction/` patterns
+2. **`createSwapDelegation`** in the same file shows a second scope type: `functionCall` with `targets` (e.g. `UNISWAP_SWAP_ROUTER_02`) and Uniswap V3 **selectors** (`exactInputSingle`, `exactInput`, `exactOutputSingle`, `exactOutput`). Same sign-and-return shape as the transfer helper.
 
-3. **Implement `createSwapDelegation`:**
-   - Same pattern, but `scope: { type: "functionCall", targets: [UNISWAP_SWAP_ROUTER_02], selectors: [...] }`
-   - Selectors: `exactInputSingle`, `exactInput`, `exactOutputSingle`, `exactOutput` (see workshop-correction)
+3. **Workshop track:** If your `src/workshop/2-agent-tools.ts` still has TODOs, wire each tool like `transferTool` — call the matching `create*Delegation`, then `callExternalAgent` with the right `skill`. **`src/workshop-correction/`** mirrors the intended end state.
 
-4. **Verify:** Set `TARGET_ADDRESS` in `.env` to the recipient you will name in the prompt (must match the address in the signed delegation). `pnpm run workshop test` — e.g. send `Send 0.00042 ETH to 0x…` using the same `0x…` as `TARGET_ADDRESS`. The agent should execute the transfer (if delegator has ETH on Base Sepolia).
+4. **Going further:** You can enrich the agent with more LangChain tools by repeating this pattern: a `create…Delegation` (appropriate scopes and caveats) + a tool that forwards to `callExternalAgent`. Examples to explore on your own: **swap** (already sketched above), **bridge**, extra caveats, or additional external skills — without changing the runtime, only the tool surface.
+
+5. **Verify:** Set `TARGET_ADDRESS` in `.env` to the recipient you name in the prompt (must match the address in the signed delegation). Run `pnpm run workshop test` — e.g. `Send 0.00042 ETH to 0x…` with the same `0x…` as `TARGET_ADDRESS`. The transfer should execute on-chain if the delegator has ETH on Base Sepolia.
 
 ---
 
@@ -186,14 +178,13 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 1. **Open** `src/workshop/3-agent-services.ts`.
 
-2. **Find** the TODO for x402 payment middleware (around line 110). The `payTo` address is already defined.
+2. **Find** the `POST /paid-service` handler (around line 160). It currently **throws first** with `throw new Error("TODO: Implement x402 payment for /paid-service");` — that line is a stub so the paid route does not run until you wire x402.
 
-3. **Implement** the payment middleware:
-   - Add `app.use(paymentMiddleware(payTo, { ... }))` before the route handlers
-   - Configure `/paid-service` with `price: "$0.01"`, `network: "base-sepolia"`, and a `config.description`
-   - **Reference:** `src/workshop-correction/3-agent-services.ts`
+3. **Implement** x402 (see `src/workshop-correction/3-agent-services.ts`):
+   - After the JSON middleware and the small logging middleware (the block that logs when `X-PAYMENT` is present on `/paid-service`), define a `payTo` address (`process.env.PAY_TO_ADDRESS` or the same fallback as the correction) and add `app.use(paymentMiddleware(payTo, { "/paid-service": { price: "$0.01", network: "base-sepolia", config: { description: "…" } } }))` **before** the route handlers that serve `/free-service` and `/paid-service`.
+   - **Remove** the `throw new Error("TODO: …")` at the top of the `/paid-service` handler so the handler body runs after payment.
 
-4. **Verify:** Without the middleware, `/paid-service` works like `/free-service`. With it, clients get HTTP 402 and must pay before the response.
+4. **Verify:** Before the middleware and without removing the throw, `/paid-service` fails with that TODO error. After wiring x402, unauthenticated clients get HTTP **402** until they pay; then the handler behaves like `/free-service` (same agent invoke and delegation), with payment enforced by the middleware.
 
 ---
 
@@ -251,7 +242,7 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 | `1-agent-runtime.ts` | Add tools: import `transferTool` from `./2-agent-tools` and add to `tools` array |
 | `lib/delegation.ts` | `createTransferDelegation` — ERC-7710 delegation for native transfer (include `allowedTargets` for recipient) |
 | `lib/delegation.ts` | `createSwapDelegation` — ERC-7710 delegation for token swap |
-| `3-agent-services.ts` | x402 payment middleware for `/paid-service` ($0.01 USDC on base-sepolia) |
+| `3-agent-services.ts` | x402: add `paymentMiddleware` for `/paid-service`, remove the stub `throw` in the `POST /paid-service` handler ($0.01 USDC on base-sepolia) |
 | `3-agent-services.ts` | (Optional) Customize `agentUri.name` and `agentUri.description` |
 
 ---
@@ -261,7 +252,7 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 | Command | Description |
 |---------|-------------|
 | `pnpm run workshop create` | Create smart accounts (add addresses to .env) |
-| `pnpm run workshop balances` | Show ETH + USD for `USER_SA_ADDRESS`, `AGENT1_SA_ADDRESS`, `AGENT2_SA_ADDRESS` (Base Sepolia) |
+| `pnpm run workshop balances` | Show ETH + on-chain USDC for `USER_SA_ADDRESS`, `AGENT1_SA_ADDRESS`, `AGENT2_SA_ADDRESS` (Base Sepolia) |
 | `pnpm run workshop test` | Test agent (runtime + tools) |
 | `pnpm run workshop launch` | Start HTTP server at http://localhost:3000 |
 | `pnpm run workshop register` | On-chain agent registration (ERC-8004) |
@@ -300,7 +291,7 @@ src/
 ├── workshop/                    # Your workspace
 │   ├── 1-agent-runtime.ts      # TODO: LLM invoke, conditional edge, add tools to array
 │   ├── 2-agent-tools.ts         # transferTool, swapTool (call delegation)
-│   ├── 3-agent-services.ts      # TODO: x402 payment for /paid-service; HTTP server, agent card
+│   ├── 3-agent-services.ts      # TODO: stub throw in POST /paid-service; add x402 middleware; HTTP server, agent card
 │   ├── 4-agent-registration.ts
 │   └── index.ts
 └── workshop-correction/         # Reference solution

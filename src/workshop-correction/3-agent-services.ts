@@ -24,6 +24,7 @@ import { createTransferDelegation, getDelegationContextUserToAgent1 } from "../l
 // PORT
 // ============================================================================
 export const PORT = Number(process.env.PORT) || 3000;
+export const TARGET_ADDRESS = process.env.TARGET_ADDRESS!;
 
 // ============================================================================
 // WELL-KNOWN PATHS (ERC-8004 / RFC 8615)
@@ -254,8 +255,9 @@ export async function startServer(): Promise<void> {
   🔗 A2A:                  POST http://localhost:${PORT}/a2a/v1
   🖥  Web:                  GET  http://localhost:${PORT}/
 
-  💬 curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"}'
-  💬 pnpm run call-services free --message "Send 0.00000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
+  💬 curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to ${TARGET_ADDRESS}"}'
+  💬 pnpm run call-services free --message "Send 0.00000042 ETH to ${TARGET_ADDRESS}"
+  💬 pnpm run call-services:correction paid --message "transfer 0.000000111 ETH to ${TARGET_ADDRESS}"
 `);
       resolve();
     });

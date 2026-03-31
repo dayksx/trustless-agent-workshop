@@ -24,7 +24,7 @@ import { createTransferDelegation, getDelegationContextUserToAgent1 } from "../l
 // PORT
 // ============================================================================
 export const PORT = Number(process.env.PORT) || 3000;
-
+export const TARGET_ADDRESS = process.env.TARGET_ADDRESS!;
 // ============================================================================
 // WELL-KNOWN PATHS (ERC-8004 / RFC 8615)
 // ============================================================================
@@ -104,6 +104,7 @@ export const agentUri = {
 export const app = express();
 app.use(express.json());
 
+
 // Log when HTTP request meets the facilitator to pay x402
 app.use((req, _res, next) => {
   if (req.path === "/paid-service" && req.header("X-PAYMENT")) {
@@ -111,20 +112,6 @@ app.use((req, _res, next) => {
   }
   next();
 });
-
-// x402: Payment middleware for /paid-service (payTo from env, default test address)
-const payTo =
-  (process.env.PAY_TO_ADDRESS as `0x${string}`) ||
-  "0x224b11F0747c7688a10aCC15F785354aA6493ED6";
-app.use(
-  paymentMiddleware(payTo, {
-    "/paid-service": {
-      price: "$0.01",
-      network: "base-sepolia",
-      config: { description: "Paid chat with Workshop Swap Coordinator" },
-    },
-  })
-);
 
 // Agent card (A2A discovery)
 app.get(AGENT_CARD_PATH, (_req, res) => {
@@ -174,6 +161,7 @@ app.post("/free-service", async (req, res) => {
 // x402 payable endpoint (same as /chat, requires payment)
 app.post("/paid-service", async (req, res) => {
   console.log("💰 POST /paid-service", req.body.message);
+  throw new Error("TODO: Implement x402 payment for /paid-service");
   const { message } = req.body;
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) required" });
@@ -252,9 +240,9 @@ export async function startServer(): Promise<void> {
   🔗 A2A:                  POST http://localhost:${PORT}/a2a/v1
   🖥  Web:                  GET  http://localhost:${PORT}/
 
-  💬 curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"}'
-  💬 pnpm run call-services free --message "Send 0.00000042 ETH to 0xA7F36973465b4C3d609961Bc72Cc2E65acE26337"
-`);
+  💬 curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to ${TARGET_ADDRESS}"}'
+  💬 pnpm run call-services free --message "Send 0.00000042 ETH to ${TARGET_ADDRESS}"
+  💬 pnpm run call-services:correction paid --message "transfer 0.000000111 ETH to ${TARGET_ADDRESS}"`);
       resolve();
     });
   });
