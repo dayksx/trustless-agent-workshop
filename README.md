@@ -103,6 +103,14 @@ Follow these steps in order. Each step has **code to implement** (TODOs in `src/
 
 **Goal:** Implement the LLM node so it invokes the model with the system prompt and user messages.
 
+Use a **LangChain chat model** from the package that matches your provider (install if needed: `pnpm add @langchain/openai`, `@langchain/anthropic`, etc.). Instantiate it in code, for example:
+
+```ts
+const model = new ChatOpenAI({ apiKey: process.env.LLM_API_KEY, model: "gpt-4o-mini" });
+```
+
+You can swap `ChatOpenAI` for `ChatAnthropic`, `ChatGroq`, `ChatGoogleGenerativeAI`, or another [`BaseChatModel`](https://js.langchain.com/docs/integrations/chat/) — the workshop file lists commented import lines at the top.
+
 1. **Open** `src/workshop/1-agent-runtime.ts`.
 
 2. **Find** the `llm` node callback (around line 70). It currently throws a TODO error.

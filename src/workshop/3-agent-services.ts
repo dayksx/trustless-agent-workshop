@@ -25,6 +25,7 @@ import { createTransferDelegation, getDelegationContextUserToAgent1 } from "../l
 // ============================================================================
 export const PORT = Number(process.env.PORT) || 3000;
 export const TARGET_ADDRESS = process.env.TARGET_ADDRESS!;
+export const AGENT2_SA_ADDRESS = process.env.AGENT2_SA_ADDRESS!;
 // ============================================================================
 // WELL-KNOWN PATHS (ERC-8004 / RFC 8615)
 // ============================================================================
@@ -113,6 +114,7 @@ app.use((req, _res, next) => {
   next();
 });
 
+
 // Agent card (A2A discovery)
 app.get(AGENT_CARD_PATH, (_req, res) => {
   console.log("📄 GET", AGENT_CARD_PATH);
@@ -161,7 +163,7 @@ app.post("/free-service", async (req, res) => {
 // x402 payable endpoint (same as /chat, requires payment)
 app.post("/paid-service", async (req, res) => {
   console.log("💰 POST /paid-service", req.body.message);
-  throw new Error("TODO: Implement x402 payment for /paid-service");
+  //throw new Error("TODO: Implement x402 payment for /paid-service");
   const { message } = req.body;
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) required" });
@@ -241,8 +243,9 @@ export async function startServer(): Promise<void> {
   🖥  Web:                  GET  http://localhost:${PORT}/
 
   💬 curl -X POST http://localhost:${PORT}/free-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to ${TARGET_ADDRESS}"}'
+  💬 curl -X POST http://localhost:${PORT}/paid-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to ${TARGET_ADDRESS}"}'
   💬 pnpm run call-services free --message "Send 0.00000042 ETH to ${TARGET_ADDRESS}"
-  💬 pnpm run call-services:correction paid --message "transfer 0.000000111 ETH to ${TARGET_ADDRESS}"`);
+  💬 pnpm run call-services paid --message "transfer 0.000000111 ETH to ${TARGET_ADDRESS}"`);
       resolve();
     });
   });

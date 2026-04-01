@@ -25,7 +25,7 @@ import { createTransferDelegation, getDelegationContextUserToAgent1 } from "../l
 // ============================================================================
 export const PORT = Number(process.env.PORT) || 3000;
 export const TARGET_ADDRESS = process.env.TARGET_ADDRESS!;
-
+export const AGENT2_SA_ADDRESS = process.env.AGENT2_SA_ADDRESS!;
 // ============================================================================
 // WELL-KNOWN PATHS (ERC-8004 / RFC 8615)
 // ============================================================================
@@ -115,7 +115,7 @@ app.use((req, _res, next) => {
 // x402: Payment middleware for /chat-paid (payTo from env, default test address)
 const payTo =
   (process.env.PAY_TO_ADDRESS as `0x${string}`) ||
-  "0x224b11F0747c7688a10aCC15F785354aA6493ED6";
+  AGENT2_SA_ADDRESS;
 app.use(
   paymentMiddleware(payTo, {
     "/paid-service": {

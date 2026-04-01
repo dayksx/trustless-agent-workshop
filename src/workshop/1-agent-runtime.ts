@@ -39,24 +39,22 @@ import { transferTool } from "./2-agent-tools";
 // STATIC PROMPT
 // ============================================================================
 
-const STATIC_SYSTEM_PROMPT = `You are a transfer coordinator agent. Help users send native tokens (ETH) by delegating to an external A2A transfer agent.`;
-
+const STATIC_SYSTEM_PROMPT = ``;
+const LLM_API_KEY = process.env.LLM_API_KEY!;
 // ============================================================================
 // MODEL & TOOLS
 // ============================================================================
-// TODO: Configure your LLM model (ChatOpenAI, ChatAnthropic, ChatGroq, etc.)
+// TODO: Instantiate a LangChain chat model (uncomment one import at top), e.g.:
+//   const model = new ChatOpenAI({ apiKey: LLM_API_KEY, model: "gpt-4o-mini" });
+//   // or: new ChatAnthropic({ ... }), new ChatGroq({ ... }), etc.
+// Then: const modelWithTools = model.bindTools(tools);
 // See commented imports at top of file. Set LLM_API_KEY in .env.
-const model = new ChatOpenAI({
-  model: "gpt-4o-mini",
-  temperature: 0,
-  apiKey: process.env.LLM_API_KEY,
-});
 
 // TODO: Import tools from ./2-agent-tools and add to the array. Start with transferTool.
 // Example: import { transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool } from "./2-agent-tools"; const tools = [transferTool, swapTool, ...];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tools: any[] = [];
-const modelWithoutTools = model.bindTools(tools);
+//const modelWithoutTools = model.bindTools(tools);
 
 // ============================================================================
 // LANGGRAPH AGENT RUNTIME
@@ -72,6 +70,7 @@ const agent = new StateGraph(AgentStateAnnotation)
     // Hint: const response = await modelWithTools.invoke([new SystemMessage(state.messages]);
     //       return { messages: [response] };
     async (state: typeof AgentStateAnnotation.State) => {
+      // README Step 1: use modelWithTools (or model) from LangChain — e.g. `await modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages])`
       // README (Step 0 verify / Step 1): replace this with model invoke — until then, `pnpm run workshop test` throws as documented.
       throw new Error("TODO: Implement LLM invoke");
     }
@@ -83,7 +82,6 @@ const agent = new StateGraph(AgentStateAnnotation)
   .addConditionalEdges(
     "llm",
     (state: typeof AgentStateAnnotation.State) => {
-
       return END;
     },
     ["tools", END]
@@ -92,4 +90,4 @@ const agent = new StateGraph(AgentStateAnnotation)
   .addEdge("tools", "llm")
   .compile({ checkpointer });
 
-export { agent, agent as agentRuntime, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, model, tools };
+export { agent, agent as agentRuntime, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, tools };

@@ -28,7 +28,7 @@ export const transferTool = tool(
       const parentDelegation = config?.configurable?.signedDelegation;
       const signedDelegation = await createTransferDelegation(parentDelegation, recipient, amount, when);
       const data = await callExternalAgent({
-        agentId: 1,
+        agentId: 2,
         skill: "transfer",
         signedDelegation,
         parentDelegation,
