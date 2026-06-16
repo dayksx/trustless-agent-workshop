@@ -259,7 +259,6 @@ export async function startServer(): Promise<void> {
   💬 curl -X POST http://localhost:${PORT}/paid-service -H "Content-Type: application/json" -d '{"message":"Send 0.00042 ETH to ${TARGET_ADDRESS}"}'
   💬 pnpm run call-services free --message "Send 0.00000042 ETH to ${TARGET_ADDRESS}"
   💬 pnpm run call-services paid --message "transfer 0.000000111 ETH to ${TARGET_ADDRESS}"`);
-`);
       resolve();
     });
   });
