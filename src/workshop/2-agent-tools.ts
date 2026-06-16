@@ -22,34 +22,18 @@ import { callExternalAgent } from "../lib/external-agent";
 
 export const transferTool = tool(
   async ({ recipient, amount, when }, config?: any) => {
-    console.log("Tool invoked: transfer");
-    try {
+    console.log("Tool invoked: transfer with input: ", { recipient, amount, when });
+    
+    // TODO: Implement transfer flow
+    // 1. createTransferDelegation(recipient, amount, when)
+    // 2. callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, recipient, amount, when })
+    // 3. If data.error, return JSON.stringify({ error: data.error.message })
+    // 4. Else return JSON.stringify({ taskId, message }) with the result
 
-      const parentDelegation = config?.configurable?.signedDelegation;
-      const signedDelegation = await createTransferDelegation(parentDelegation, recipient, amount, when);
-      const data = await callExternalAgent({
-        agentId: 2,
-        skill: "transfer",
-        signedDelegation,
-        parentDelegation,
-        recipient,
-        amount,
-        when,
-      });
-
-      if (data.error) {
-        return JSON.stringify({ error: data.error.message });
-      }
-
-      return JSON.stringify({
-        taskId: 1, // TODO: replace with data.result?.taskId,
-        message: `Transfer successfully executed on-chain on behalf of the delegator. Transaction hash: <replace with data.result?.hash>`,
-      });
-    } catch (error: any) {
-      return JSON.stringify({
-        error: error.message,
-      });
-    }
+    return JSON.stringify({
+      taskId: 1, // TODO: replace with data.result?.taskId,
+      message: `Transfer successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
+    });
   },
   {
     name: "transfer",
@@ -138,6 +122,7 @@ export const stakingTool = tool(
     }),
   }
 );
+
 
 export const yieldFarmingTool = tool(
   async ({ amount, when }) => {

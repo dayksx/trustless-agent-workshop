@@ -35,6 +35,12 @@ import {
 } from "../lib/delegation";
 import { getBalances } from "../lib/balance-service";
 
+// init variables
+const amount = "0.000000111";
+const when = "now";
+const recipient = process.env.TARGET_ADDRESS!;
+// const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
+
 // ============================================================================
 // RUN
 // ============================================================================
@@ -49,38 +55,39 @@ async function balances() {
 }
 
 async function test() {
-  
-  const amount = "0.000000111";
-  const when = "now";
-  const recipient = process.env.TARGET_ADDRESS!;
+  // Input data
+  const signedDelegation = undefined;
+  const message = `Transfer ${amount} ETH to ${recipient} ${when} and swap 0.1 ETH to $LINEA and stake 0.1 ETH and lend all my $LINEA token `;
+  console.log("💬 My message:", message);
 
-  const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
-
-  const r = await agent.invoke(
+  // Agent's workflow invocation
+  const agentState = await agent.invoke(
     {
-      messages: [new HumanMessage(`Transfer ${amount} ETH to ${recipient} ${when}`)],
+      messages: [new HumanMessage(message)],
     },
     { configurable: { thread_id: "workshop-demo", signedDelegation } }
   );
+
+  // Ouput data
   console.log("\n 💬 AI response:");
-  console.log(r.messages.at(-1)?.content ?? "No response");
+  console.log(agentState.messages.at(-1)?.content ?? "No response");
 }
 
 function printHelp() {
   console.log(`
-Workshop: Trustless Agent (LangGraph + ERC-7710)
+    Workshop: Trustless Agent (LangGraph + ERC-7710)
 
-Usage: pnpm run pnpm run workshop test workshop [step]
+    Usage: pnpm run pnpm run workshop test workshop [step]
 
-Steps:
-  create   Create smart accounts first (add printed addresses to .env)
-  test     Test agent (runtime + tools)
-  launch   Start HTTP server (agent card, free/paid services)
-  register On-chain agent registration (ERC-8004)
-  balances Show ETH + USDC balances for USER_SA, AGENT1_SA, AGENT2_SA (Base Sepolia)
+    Steps:
+      test     Test agent (runtime + tools)
+      create   Create smart accounts first (add printed addresses to .env)
+      launch   Start HTTP server (agent card, free/paid services)
+      register On-chain agent registration (ERC-8004)
+      balances Show ETH + USDC balances for USER_SA, AGENT1_SA, AGENT2_SA (Base Sepolia)
 
-Run 'create' first to get AGENT1_SA_ADDRESS, AGENT2_SA_ADDRESS, and USER_SA_ADDRESS for .env
-`);
+    Run 'create' first to get AGENT1_SA_ADDRESS, AGENT2_SA_ADDRESS, and USER_SA_ADDRESS for .env
+  `);
 }
 
 async function main() {
@@ -101,6 +108,9 @@ async function main() {
     case "balances":
       await balances();
       break;
+      case "help":
+        await printHelp();
+        break; 
     default:
       printHelp();
   }

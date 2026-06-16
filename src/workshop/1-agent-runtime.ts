@@ -33,7 +33,6 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage, BaseMessage, AIMessage } from "@langchain/core/messages";
 // TODO: Import tools from ./2-agent-tools (transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool)
 import { AgentStateAnnotation } from "../lib/agent-state";
-import { transferTool } from "./2-agent-tools";
 
 // ============================================================================
 // STATIC PROMPT
@@ -54,7 +53,6 @@ const LLM_API_KEY = process.env.LLM_API_KEY!;
 // Example: import { transferTool, swapTool, stakingTool, yieldFarmingTool, lendingTool } from "./2-agent-tools"; const tools = [transferTool, swapTool, ...];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tools: any[] = [];
-//const modelWithoutTools = model.bindTools(tools);
 
 // ============================================================================
 // LANGGRAPH AGENT RUNTIME
@@ -63,31 +61,9 @@ const tools: any[] = [];
 const toolNode = new ToolNode(tools);
 const checkpointer = new MemorySaver();
 
-const agent = new StateGraph(AgentStateAnnotation)
-  .addNode(
-    "llm",
-    // TODO: Implement LLM node — invoke modelWithTools with system prompt + state.messages, return { messages: [response] }
-    // Hint: const response = await modelWithTools.invoke([new SystemMessage(state.messages]);
-    //       return { messages: [response] };
-    async (state: typeof AgentStateAnnotation.State) => {
-      // README Step 1: use modelWithTools (or model) from LangChain — e.g. `await modelWithTools.invoke([new SystemMessage(STATIC_SYSTEM_PROMPT), ...state.messages])`
-      // README (Step 0 verify / Step 1): replace this with model invoke — until then, `pnpm run workshop test` throws as documented.
-      throw new Error("TODO: Implement LLM invoke");
-    }
-  )
-  .addNode("tools", toolNode)
-  // TODO: Implement routing — return "tools" when the last message has tool_calls, else END
-  // Hint: const last = state.messages[state.messages.length - 1];
-  //       return last instanceof AIMessage && last.tool_calls?.length ? "tools" : END;
-  .addConditionalEdges(
-    "llm",
-    (state: typeof AgentStateAnnotation.State) => {
-      return END;
-    },
-    ["tools", END]
-  )
-  .addEdge(START, "llm")
-  .addEdge("tools", "llm")
-  .compile({ checkpointer });
+
+const agent = new StateGraph(AgentStateAnnotation);
+throw new Error("TODO: Implement Workflow");
+
 
 export { agent, agent as agentRuntime, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, tools };
