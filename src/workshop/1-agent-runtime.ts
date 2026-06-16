@@ -62,8 +62,9 @@ const toolNode = new ToolNode(tools);
 const checkpointer = new MemorySaver();
 
 
-const agent = new StateGraph(AgentStateAnnotation);
+const agentWorkflow = new StateGraph(AgentStateAnnotation).compile();
+
 throw new Error("TODO: Implement Workflow");
 
 
-export { agent, agent as agentRuntime, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, tools };
+export { agentWorkflow, AgentStateAnnotation, STATIC_SYSTEM_PROMPT, tools };

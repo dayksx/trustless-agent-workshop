@@ -17,7 +17,7 @@ import { randomUUID } from "node:crypto";
 import express from "express";
 import { paymentMiddleware } from "x402-express";
 import { HumanMessage } from "@langchain/core/messages";
-import { agent } from "./1-agent-runtime";
+import { agentWorkflow } from "./1-agent-runtime";
 import { createTransferDelegation, getDelegationContextUserToAgent1 } from "../lib/delegation";
 
 // ============================================================================
@@ -145,7 +145,7 @@ app.post("/free-service", async (req, res) => {
     const recipient = process.env.TARGET_ADDRESS!;
     const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
 
-    const result = await agent.invoke(
+    const result = await agentWorkflow.invoke(
       { messages: [new HumanMessage(message)] },
       { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
     );
@@ -163,31 +163,8 @@ app.post("/free-service", async (req, res) => {
 // x402 payable endpoint (same as /chat, requires payment)
 app.post("/paid-service", async (req, res) => {
   console.log("💰 POST /paid-service", req.body.message);
-  //throw new Error("TODO: Implement x402 payment for /paid-service");
-  const { message } = req.body;
-  if (!message || typeof message !== "string") {
-    return res.status(400).json({ error: "message (string) required" });
-  }
+  throw new Error("TODO: Implement x402 payment for /paid-service");
 
-  try {
-    const amount = "0.001";
-    const when = "now";
-    const recipient = process.env.TARGET_ADDRESS!;
-    const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
-
-    const result = await agent.invoke(
-      { messages: [new HumanMessage(message)] },
-      { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
-    );
-    const lastMsg = result.messages[result.messages.length - 1];
-    const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";
-    res.json({ response: text, messages: result.messages.length });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: err instanceof Error ? err.message : "Unknown error" });
-  }
 });
 
 // Basic web landing page
