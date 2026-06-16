@@ -17,7 +17,7 @@ import { HumanMessage } from "@langchain/core/messages";
 // ============================================================================
 // ÉTAPE 1: Agent Runtime (1-agent-runtime.ts) & Tools (2-agent-tools.ts) with delegation
 // ============================================================================
-import { agentWorkflow } from "./1-agent-runtime";
+import { } from "./1-agent-runtime";
 
 // ============================================================================
 // ÉTAPE 3: Services HTTP (3-agent-services.ts)
