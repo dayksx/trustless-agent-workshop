@@ -56,21 +56,15 @@ async function balances() {
 
 async function test() {
   // Input data
-  const signedDelegation = undefined;
   const message = `Transfer ${amount} ETH to ${recipient} ${when} and swap 0.1 ETH to $LINEA and stake 0.1 ETH and lend all my $LINEA token `;
   console.log("💬 My message:", message);
 
   // Agent's workflow invocation
-  const agentState = await agentWorkflow.invoke(
-    {
-      messages: [new HumanMessage(message)],
-    },
-    { configurable: { thread_id: "workshop-demo", signedDelegation } }
-  );
-
+  throw new Error("TODO: Call Compiled Workflow");
+  
   // Ouput data
   console.log("\n 💬 AI response:");
-  console.log(agentState.messages.at(-1)?.content ?? "No response");
+  // console.log(agentState.messages.at(-1)?.content ?? "No response");
 }
 
 function printHelp() {
