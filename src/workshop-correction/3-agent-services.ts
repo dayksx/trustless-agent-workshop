@@ -112,7 +112,7 @@ app.use((req, _res, next) => {
   next();
 });
 
-// x402: Payment middleware for /chat-paid (payTo from env, default test address)
+// x402: Payment middleware for /paid-service (payTo from env, default Agent2 SA)
 const payTo =
   (process.env.PAY_TO_ADDRESS as `0x${string}`) ||
   AGENT2_SA_ADDRESS;
@@ -125,6 +125,47 @@ app.use(
     },
   })
 );
+
+// ============================================================================
+// SHARED SERVICE HANDLER (free + paid)
+// ============================================================================
+
+async function invokeAgentService(message: string) {
+  const amount = "0.001";
+  const recipient = process.env.TARGET_ADDRESS!;
+  const signedDelegation = await createTransferDelegation(
+    undefined,
+    recipient,
+    amount,
+    null,
+    getDelegationContextUserToAgent1(),
+  );
+
+  const result = await agent.invoke(
+    { messages: [new HumanMessage(message)] },
+    { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } },
+  );
+
+  const lastMsg = result.messages[result.messages.length - 1];
+  const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";
+  return { response: text, messages: result.messages.length };
+}
+
+async function handleServiceRequest(req: express.Request, res: express.Response) {
+  const { message } = req.body;
+  if (!message || typeof message !== "string") {
+    return res.status(400).json({ error: "message (string) required" });
+  }
+
+  try {
+    res.json(await invokeAgentService(message));
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : "Unknown error" });
+  }
+}
 
 // Agent card (A2A discovery)
 app.get(AGENT_CARD_PATH, (_req, res) => {
@@ -142,63 +183,15 @@ app.get(AGENT_URI_PATH, (_req, res) => {
   res.json(agentUri);
 });
 
-// Chat endpoint
 app.post("/free-service", async (req, res) => {
-  const { message } = req.body;
-  console.log("💬 POST /free-service: ", message);
-  if (!message || typeof message !== "string") {
-    return res.status(400).json({ error: "message (string) required" });
-  }
-
-  try {
-    const amount = "0.001";
-    const when = "now";
-    const recipient = process.env.TARGET_ADDRESS!;
-
-    const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
-
-    const result = await agent.invoke(
-      { messages: [new HumanMessage(message)] },
-      { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
-    );
-    const lastMsg = result.messages[result.messages.length - 1];
-    const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";
-    res.json({ response: text, messages: result.messages.length });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: err instanceof Error ? err.message : "Unknown error" });
-  }
+  console.log("💬 POST /free-service:", req.body.message);
+  return handleServiceRequest(req, res);
 });
 
-// x402 payable endpoint (same as /chat, requires payment)
+// x402 payable endpoint — same agent logic; payment enforced by middleware above
 app.post("/paid-service", async (req, res) => {
-  const { message } = req.body;
-  console.log("💰 POST /paid-service: ", message);
-  if (!message || typeof message !== "string") {
-    return res.status(400).json({ error: "message (string) required" });
-  }
-
-  try {
-    const amount = "0.001";
-    const when = "now";
-    const recipient = process.env.TARGET_ADDRESS!;
-    const signedDelegation = await createTransferDelegation(undefined, recipient, amount, null, getDelegationContextUserToAgent1());
-
-    const result = await agent.invoke(
-      { messages: [new HumanMessage(message)] },
-      { configurable: { thread_id: `workshop-${randomUUID()}`, signedDelegation } }
-    );
-    const lastMsg = result.messages[result.messages.length - 1];
-    const text = lastMsg && "content" in lastMsg ? String(lastMsg.content) : "";
-    res.json({ response: text, messages: result.messages.length });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: err instanceof Error ? err.message : "Unknown error" });
-  }
+  console.log("💰 POST /paid-service:", req.body.message);
+  return handleServiceRequest(req, res);
 });
 
 // Basic web landing page
@@ -235,8 +228,6 @@ app.post("/a2a/v1", async (req, res) => {
 // ============================================================================
 // RUN
 // ============================================================================
-
-
 
 export async function startServer(): Promise<void> {
   if (!process.env.LLM_API_KEY) {

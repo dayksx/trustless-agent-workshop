@@ -13,7 +13,7 @@
 import "dotenv/config";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
-import { createTransferDelegation, createSwapDelegation } from "../lib/delegation";
+import { createSwapDelegation } from "../lib/delegation";
 import { callExternalAgent } from "../lib/external-agent";
 
 // ============================================================================
@@ -23,17 +23,23 @@ import { callExternalAgent } from "../lib/external-agent";
 export const transferTool = tool(
   async ({ recipient, amount, when }, config?: any) => {
     console.log("Tool invoked: transfer with input: ", { recipient, amount, when });
-    
-    // TODO: Implement transfer flow
-    // 1. createTransferDelegation(recipient, amount, when)
-    // 2. callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, recipient, amount, when })
-    // 3. If data.error, return JSON.stringify({ error: data.error.message })
-    // 4. Else return JSON.stringify({ taskId, message }) with the result
+    try {
+      // TODO: Implement transfer flow (see workshop-correction/2-agent-tools.ts)
+      // 1. const parentDelegation = config?.configurable?.signedDelegation;
+      // 2. const signedDelegation = await createTransferDelegation(parentDelegation, recipient, amount, when);
+      // 3. const data = await callExternalAgent({ agentId: 1, skill: "transfer", signedDelegation, parentDelegation, recipient, amount, when });
+      // 4. If data.error, return JSON.stringify({ error: data.error.message })
+      // 5. Else return JSON.stringify({ taskId, hash, message }) with the result
 
-    return JSON.stringify({
-      taskId: 1, // TODO: replace with data.result?.taskId,
-      message: `Transfer successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
-    });
+      return JSON.stringify({
+        taskId: 1, // TODO: replace with data.result?.taskId
+        message: `Transfer successfully executed on-chain on behalf of the delegator. Transaction hash: 0x0000000000000000000000000000000000000000000000000000000000000000`,
+      });
+    } catch (error: any) {
+      return JSON.stringify({
+        error: error.message,
+      });
+    }
   },
   {
     name: "transfer",
